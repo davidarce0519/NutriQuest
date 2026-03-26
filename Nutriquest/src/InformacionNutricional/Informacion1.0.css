@@ -1,0 +1,206 @@
+/* =========================================
+   1. VARIABLES Y CONFIGURACIÓN BASE
+   ========================================= */
+:root {
+  --app-green: #1a6b0a;        /* Verde principal NutriQuest */
+  --app-dark-green: #042901;   /* Verde oscuro para botones y textos */
+  --card-bg: #ebece7;          /* Fondo crema de la tarjeta de contenido */
+  --white: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nutri-page {
+  background-color: var(--app-green); 
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: 'Arial Rounded MT Bold', sans-serif;
+  overflow-x: hidden;
+}
+
+/* =========================================
+   2. HEADER Y BOTÓN EN LA ESQUINA DE LA PÁGINA
+   ========================================= */
+.red-header {
+  background-color: transparent;
+  width: 100%;
+  padding: 60px 0 20px 0; 
+  display: flex;
+  justify-content: center; 
+  align-items: center;
+  position: relative;
+}
+
+/* BOTÓN MENÚ: POSICIONADO EN LA ESQUINA SUPERIOR IZQUIERDA DE LA PANTALLA */
+.menu-btn {
+  background-color: var(--app-dark-green);
+  color: white;
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  
+  position: absolute;
+  left: 20px;   /* Esquina izquierda */
+  top: 50px;    /* Esquina superior */
+  
+  transition: transform 0.1s ease;
+  z-index: 100;
+}
+
+.menu-btn:active {
+  transform: scale(0.85);
+}
+
+.header-logo-container {
+  width: 130px; 
+}
+
+.header-logo-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* =========================================
+   3. TARJETA DE CONTENIDO
+   ========================================= */
+.white-content-card {
+  background-color: var(--card-bg);
+  width: 92%;
+  max-width: 400px;
+  margin-top: 5px; 
+  border-radius: 40px;
+  padding: 25px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  margin-bottom: 30px;
+  z-index: 2;
+}
+
+.section-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--app-dark-green);
+}
+
+.title-left { display: flex; align-items: center; gap: 10px; }
+.title-left h2 { font-size: 26px; font-weight: 900; }
+
+.back-arrow-small {
+  background: none;
+  border: none;
+  font-size: 26px;
+  color: var(--app-dark-green);
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.back-arrow-small:active {
+  transform: scale(0.8);
+}
+
+/* =========================================
+   4. BANNER ESTÁTICO (SIN INTERACCIÓN)
+   ========================================= */
+.all-foods-banner {
+  width: 100%;
+  height: 90px;
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  /* Eliminado: cursor: pointer y transiciones */
+  background-image: url('https://images.unsplash.com/photo-1490818387583-1baba5e638af?q=80&w=1000&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* Capa oscura decorativa */
+.all-foods-banner::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 1;
+}
+
+.all-foods-banner h3 {
+  color: var(--white);
+  font-size: 20px;
+  font-weight: 900;
+  text-transform: uppercase;
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* =========================================
+   5. GRID DE TARJETAS (MANTIENEN INTERACCIÓN)
+   ========================================= */
+.foods-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.food-card-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  transition: transform 0.1s;
+}
+
+.food-card-button:active { 
+  transform: scale(0.96); 
+}
+
+.food-img-wrapper {
+  width: 100%;
+  height: 110px;
+  overflow: hidden;
+}
+
+.food-img-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.food-card-label {
+  background-color: var(--white);
+  padding: 10px 4px;
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--app-dark-green);
+  text-align: center;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
