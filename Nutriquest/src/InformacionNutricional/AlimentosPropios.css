@@ -1,0 +1,135 @@
+:root {
+  --app-green: #1a6b0a;
+  --app-dark-green: #042901;
+  --bg-page: #d9d6cc;
+  --card-bg: #f2f2ed;
+  --pure-white: #ffffff;
+  --shadow-main: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial Rounded MT Bold', sans-serif;
+}
+
+.nutri-page-container {
+  background-color: var(--bg-page);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* HEADER SEPARADO */
+.page-header {
+  background-color: var(--app-green);
+  width: 100%;
+  height: 110px;
+  border-bottom-left-radius: 45px;
+  border-bottom-right-radius: 45px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 25px;
+  box-shadow: var(--shadow-main);
+  margin-bottom: 25px; /* Crea el espacio entre el verde y lo blanco */
+}
+
+.main-title {
+  color: white;
+  font-size: 28px;
+  text-align: center;
+  line-height: 1;
+}
+
+.icon-btn {
+  background: black;
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  border: none;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+/* TARJETA DE CONTENIDO */
+.main-content-card {
+  background-color: var(--card-bg);
+  width: 92%;
+  max-width: 400px;
+  border-radius: 45px;
+  padding: 25px 18px;
+  box-shadow: var(--shadow-main);
+  margin-bottom: 30px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  color: var(--app-dark-green);
+}
+
+/* GRID DINÁMICO */
+.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.food-item-card {
+  background: white;
+  border: none;
+  border-radius: 15px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.food-img-container {
+  height: 75px;
+  width: 100%;
+}
+
+.food-img-container img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Imagen completa */
+}
+
+.food-label-container {
+  background: var(--app-dark-green);
+  color: white;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 6px 2px;
+  text-align: center;
+}
+
+/* BOTÓN INFERIOR ESTILIZADO */
+.scroll-down-icon {
+  background: none;
+  border: none;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+  color: var(--app-dark-green);
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.scroll-down-icon::before {
+  content: "expand_more";
+  font-family: 'Material Icons Round';
+  font-size: 45px;
+}

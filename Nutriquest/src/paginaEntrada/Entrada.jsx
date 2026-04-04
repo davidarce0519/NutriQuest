@@ -2,6 +2,8 @@ import React from 'react';
 import './Entrada.css';
 // El "../" sube una carpeta para salir de donde está el componente y entrar a elementos_graficos
 import logoNutri from '../elementos_graficos/nutriquest_logo-removebg-preview.png';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+
 
 const MenuPrincipal = () => {
   
@@ -46,7 +48,7 @@ const MenuPrincipal = () => {
         <nav className="menu-buttons">
           <button 
             className="btn-main light" 
-            onClick={() => handleNavigation('mini-juego')}
+            onClick={() => handleNavigation('Minijuego')}
           >
             Mini Juego
           </button>

@@ -1,0 +1,105 @@
+/* Login.css */
+
+.main-container {
+  height: 100vh;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-image: url('https://www.nmas.com.mx/_next/image/?url=https%3A%2F%2Fstatic-live.nmas.com.mx%2Fnmas-news%2Fstyles%2Fcorte_16_9%2Fcloud-storage%2F2022-11%2F%25C2%25BFSe%2520pueden%2520mantener%2520los%2520limones%2520frescos%2520por%25203%2520meses__1.jpg%3Fitok%3DmYxalY_C&w=1920&q=75');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.background-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(102, 189, 41, 0.95) 0%, 
+    rgba(102, 189, 41, 0.2) 60%,  
+    rgba(0, 0, 0, 0) 100%          
+  );
+  z-index: 1;
+}
+
+.content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* CAMBIO: Empuja todo hacia el final (abajo) */
+  justify-content: flex-end; 
+  height: 100%; /* Ocupa el 100% para que el flex-end funcione */
+  padding-bottom: 80px; /* Controla qué tan cerca del borde inferior queda el enlace */
+  box-sizing: border-box;
+}
+
+.logo-container {
+  text-align: center;
+  /* CAMBIO: Este margen superior 'auto' empuja el logo hacia abajo */
+  margin-top: auto; 
+  margin-bottom: 50px; /* Espacio entre el logo y el botón */
+}
+
+.logo-img {
+  width: 250px;
+  height: auto;
+  margin-bottom: 10px;
+  filter: brightness(0) invert(1);
+}
+
+.brand-name {
+  color: white;
+  font-size: 2.2rem;
+  font-weight: bold;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.btn-iniciar {
+  background-color: #d1d1d1;
+  color: #333;
+  border: none;
+  padding: 15px 0;
+  width: 80%;
+  max-width: 300px;
+  border-radius: 50px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+  transition: background-color 0.2s, transform 0.1s;
+  font-family: 'Georgia', serif;
+}
+
+.btn-iniciar:hover {
+  background-color: #e0e0e0;
+}
+
+.btn-iniciar:active {
+  transform: scale(0.98);
+}
+
+.terms-link {
+  display: block;
+  margin-top: 25px;
+  color: white;
+  text-decoration: underline;
+  font-size: 0.95rem;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  font-family: 'Georgia', serif;
+}

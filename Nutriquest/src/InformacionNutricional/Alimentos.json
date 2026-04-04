@@ -1,0 +1,20 @@
+{
+  "config": {
+    "titulo_categoria": "Bajo en Proteínas",
+    "nombre_seccion": "Alimentos",
+    "color_tema": "#1a6b0a"
+  },
+  "banner": {
+    "texto": "Todos los alimentos",
+    "url_imagen": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS5idg606oGkz3-N4jH7337AFjJh90lKL1Exw&s"
+  },
+  "lista_alimentos": [
+    { "id": 1, "nombre": "Fresas", "img": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRsch2cerK6ZAai_el3L0Iii-uh3q9oEx870A&s" },
+    { "id": 2, "nombre": "Nueces", "img": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQitBh0S521KAkpuEfDuPl__EnilYR8GysJqQ&s" },
+    { "id": 3, "nombre": "Chocolate N", "img": "https://babyshowerchocolate.com/cdn/shop/articles/chocolate_hero1-d62e5444a8734f8d8fe91f5631d51ca5.jpg?v=1694433941" },
+    { "id": 4, "nombre": "Espinacas", "img": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSOld9xGviBX85Kqw-DRoXACG_XVlwPnGgujg&s" },
+    { "id": 5, "nombre": "Tomates", "img": "https://cdn.wikifarmer.com/images/thumbnail/2020/11/Cosas-que-no-sabias-del-tomate-%E2%80%93-Datos-Curiosos-Sobre-El-Tomate-1200x630.jpg" },
+    { "id": 6, "nombre": "Brócoli", "img": "https://mejorconsalud.as.com/wp-content/uploads/2015/06/brocoli-ramas.jpg" },
+    { "id": 7, "nombre": "Pimientos", "img": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTq7aj4LhOUbHi55QAagnNm9DRdvYbZPWly2w&s" }
+  ]
+}

@@ -1,0 +1,175 @@
+/* Registro.css */
+
+/* 1. Reset básico */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 2. Contenedor Principal (Fondo verde y centrado vertical) */
+.main-container {
+  height: 100vh;
+  width: 100%;
+  position: relative;
+  overflow-y: auto; /* Permite scroll si el formulario es muy largo */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Degradado verde similar a la imagen */
+  background: radial-gradient(circle at center, #4caf50 0%, #2e7d32 100%);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding: 20px;
+}
+
+/* 3. Botón de volver */
+.back-btn {
+  position: absolute;
+  top: 25px;
+  left: 25px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: #a7ffd1; /* Color verde agua de la flecha */
+  z-index: 10;
+}
+
+.back-icon {
+  font-size: 2.5rem; /* Tamaño de la flecha */
+}
+
+/* 4. Contenedor de Contenido (Centra el bloque del form) */
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1; /* Ocupa el espacio disponible para centrar */
+  width: 100%;
+  max-width: 350px; /* Ancho máximo del bloque */
+  padding-top: 80px; /* Espacio para el botón de volver */
+}
+
+/* 5. Título "REGISTRO" */
+.title-registro {
+  color: white;
+  font-size: 3.5rem;
+  font-family: 'Georgia', serif; /* Fuente con remates gruesos */
+  font-weight: 900;
+  margin-bottom: 40px;
+  text-shadow: 2px 4px 6px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+/* 6. Estilo del Formulario y sus elementos */
+.register-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.input-group {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.input-group label {
+  display: block;
+  color: white;
+  font-family: 'Georgia', serif;
+  font-size: 1.2rem;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
+/* Inputs grises redondeados */
+.custom-input {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 30px;
+  border: none;
+  background-color: #d1d1d1; /* Gris claro de la imagen */
+  font-size: 1rem;
+  outline: none;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.custom-input::placeholder {
+  color: #888;
+}
+
+/* 7. Botón "Ingresar" (Submit) */
+.btn-submit {
+  background-color: #d1d1d1;
+  color: #333;
+  border: none;
+  padding: 12px 50px;
+  border-radius: 30px;
+  font-size: 1.3rem;
+  font-family: 'Georgia', serif;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.btn-submit:hover {
+  background-color: #e0e0e0;
+}
+
+.btn-submit:active {
+  transform: scale(0.96);
+}
+
+/* 8. BOTONES DE REDES SOCIALES (Centrados) */
+.social-login {
+  display: flex;
+  justify-content: center; /* Centrado horizontal del grupo */
+  align-items: center;     /* Alineación vertical */
+  gap: 25px;               /* Espacio uniforme entre botones */
+  margin-top: 40px;        /* Distancia desde el botón de Ingresar */
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.social-btn {
+  width: 65px;
+  height: 65px;
+  border-radius: 50%;      /* Círculo perfecto */
+  border: none;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease;
+  padding: 0;
+  overflow: hidden;
+}
+
+.social-btn:hover {
+  transform: scale(1.1);
+}
+
+/* Botón Facebook */
+.fb-btn {
+  background-color: #1877F2;
+}
+
+.fb-btn img {
+  width: 35px;
+  height: 35px;
+}
+
+/* Botón Google */
+.google-btn {
+  background-color: #ffffff;
+}
+
+.google-btn img {
+  width: 40px;
+  height: 40px;
+}
