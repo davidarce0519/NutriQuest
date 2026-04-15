@@ -66,12 +66,14 @@ export const RegisterScreen = () => {
       <SafeAreaView style={s.safe}>
         <KeyboardAvoidingView
           style={s.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
           <ScrollView
             contentContainerStyle={s.scroll}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
+            alwaysBounceVertical={false}
           >
 
             {/* Header */}
@@ -83,7 +85,7 @@ export const RegisterScreen = () => {
                 <Text style={s.backBtnText}>‹</Text>
               </TouchableOpacity>
               <Image
-                source={require('../../../../assets/logo.png')}
+                source={require('../../../../assets/logo1.0.png')}
                 style={s.logo}
                 resizeMode="contain"
               />
@@ -217,6 +219,9 @@ export const RegisterScreen = () => {
 
               </View>
             )}
+            
+            {/* Espaciado extra final para asegurar scroll completo */}
+            <View style={{ height: 20 }} />
 
           </ScrollView>
         </KeyboardAvoidingView>
@@ -237,7 +242,12 @@ const s = StyleSheet.create({
   },
   safe: { flex: 1 },
   flex: { flex: 1 },
-  scroll: { paddingHorizontal: 18, paddingBottom: 40, gap: 14 },
+  scroll: { 
+    flexGrow: 1, // Permite que el contenido se expanda para habilitar el scroll
+    paddingHorizontal: 18, 
+    paddingBottom: 40, 
+    gap: 14 
+  },
 
   // Header
   header: {

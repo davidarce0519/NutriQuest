@@ -63,7 +63,7 @@ export const HomeScreen = () => {
           {/* ── HEADER ── */}
           <View style={s.header}>
             <Image
-              source={require('../../../../assets/logo.png')}
+              source={require('../../../../assets/logo1.0.png')}
               style={s.logo}
               resizeMode="contain"
             />
@@ -217,7 +217,7 @@ const s = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 4,
   },
-  logo: { width: 80, height: 48 },
+  logo: { width: 100, height: 50 },
   greetingText: { fontSize: 12, color: GREEN_LIGHT, fontWeight: '600' },
   nameText: { fontSize: 20, fontWeight: '900', color: WHITE },
 
