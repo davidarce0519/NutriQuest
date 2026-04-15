@@ -1,20 +1,37 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import 'react-native-gesture-handler';
+import React, { useEffect } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AppNavigator } from './src/presentation/navigation/AppNavigator';
+import { useAuthStore } from './src/infrastructure/stores/authStore';
+import { authRepository } from './src/data/repositories/authRepository';
+
+const queryClient = new QueryClient();
 
 export default function App() {
+  const { setUser, setHydrated } = useAuthStore();
+
+  useEffect(() => {
+    const { data: { subscription } } = authRepository.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          try {
+            const profile = await authRepository.getProfile(session.user.id);
+            setUser(profile);
+          } catch {
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
+        setHydrated(true);
+      }
+    );
+    return () => subscription.unsubscribe();
+  }, []);
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <QueryClientProvider client={queryClient}>
+      <AppNavigator />
+    </QueryClientProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

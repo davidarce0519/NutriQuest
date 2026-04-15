@@ -1,6 +1,6 @@
-import { suggestionRepository } from '../../data/repositories/suggestionRepository';
-import { foodRepository } from '../../data/repositories/foodRepository';
-import { SuggestionResponse, SuggestionFeedback, HealthProfile } from '../models';
+import { suggestionRepository } from '../../../data/repositories/suggestionRepository';
+import { foodRepository } from '../../../data/repositories/foodRepository';
+import { SuggestionResponse, SuggestionFeedback, HealthProfile } from '../../models';
 
 // Mensajes emocionales de acompañamiento (HU_1.5.1) — máx 15 palabras
 const EMOTIONAL_MESSAGES_EXAM = [

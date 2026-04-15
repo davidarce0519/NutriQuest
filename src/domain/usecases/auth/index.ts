@@ -1,4 +1,4 @@
-import { authRepository } from '../../data/repositories/authRepository';
+import { authRepository } from '../../../data/repositories/authRepository';
 
 export const loginUseCase = async (email: string, password: string) => {
   if (!email || !password) throw new Error('Email y contraseña son requeridos');

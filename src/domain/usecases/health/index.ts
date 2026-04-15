@@ -1,5 +1,5 @@
-import { healthRepository } from '../../data/repositories/healthRepository';
-import { HealthProfile, HealthMeasurement } from '../models';
+import { healthRepository } from '../../../data/repositories/healthRepository';
+import { HealthProfile, HealthMeasurement } from '../../models';
 
 export const getHealthProfileUseCase = async (userId: string): Promise<HealthProfile> => {
   return healthRepository.getProfile(userId);

@@ -1,4 +1,4 @@
-import { avatarRepository } from '../../data/repositories/avatarRepository';
+import { avatarRepository } from '../../../data/repositories/avatarRepository';
 
 export const getProgressUseCase = async (userId: string) => {
   return avatarRepository.getProgress(userId);
