@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   KeyboardAvoidingView, Platform, ActivityIndicator,
-  Alert, ImageBackground, Image, ScrollView,
+  Alert, ImageBackground, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Spacing, BorderRadius } from '../../../infrastructure/theme';
+import { BorderRadius } from '../../../infrastructure/theme';
 import { loginUseCase } from '../../../domain/usecases/auth';
 import { authRepository } from '../../../data/repositories/authRepository';
 import { useAuthStore } from '../../../infrastructure/stores/authStore';
@@ -16,6 +16,8 @@ import { AuthStackParams } from '../../navigation/AuthNavigator';
 type Nav = NativeStackNavigationProp<AuthStackParams, 'Login'>;
 
 const BG_IMAGE = 'https://images.unsplash.com/photo-1490818387583-1baba5e638af?q=80&w=1200&auto=format&fit=crop';
+const GREEN_DARK = '#042901';
+const WHITE = '#ffffff';
 
 export const LoginScreen = () => {
   const navigation = useNavigation<Nav>();
@@ -43,72 +45,121 @@ export const LoginScreen = () => {
   return (
     <ImageBackground source={{ uri: BG_IMAGE }} style={s.bg} resizeMode="cover">
       <View style={s.overlay} />
+
       <SafeAreaView style={s.safe}>
         <KeyboardAvoidingView
           style={s.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
         >
-          <ScrollView
-            contentContainerStyle={s.scrollContainer}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            <View style={s.logoSection}>
-              <Image
-                source={require('../../../../assets/logo1.0.png')}
-                style={s.logo}
-                resizeMode="contain"
-              />
-            </View>
+          {/* Todo el contenido centrado verticalmente */}
+          <View style={s.centered}>
 
-            <View style={s.content}>
-              {!showForm ? (
-                <View style={s.actions}>
-                  <TouchableOpacity style={s.btnIniciar} onPress={() => setShowForm(true)}>
-                    <Text style={s.btnIniciarText}>Iniciar sesión</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                    <Text style={s.termsLink}>¿No tienes cuenta? Regístrate</Text>
-                  </TouchableOpacity>
+            {!showForm ? (
+              /* ── LANDING ── */
+              <View style={s.card}>
+                {/* Logo dentro de la card */}
+                <View style={s.logoWrap}>
+                  <Image
+                    source={require('../../../../assets/logo1.0.png')}
+                    style={s.logo}
+                    resizeMode="contain"
+                  />
                 </View>
-              ) : (
-                <View style={s.form}>
-                  <Text style={s.formTitle}>Ingresar</Text>
-                  <Text style={s.label}>Email:</Text>
+
+                <View style={s.divider} />
+
+                <Text style={s.landingTitle}>Bienvenido</Text>
+                <Text style={s.landingSub}>
+                  Toma mejores decisiones alimentarias durante tus semanas más exigentes.
+                </Text>
+
+                <TouchableOpacity
+                  style={s.btnPrimary}
+                  onPress={() => setShowForm(true)}
+                  activeOpacity={0.88}
+                >
+                  <Text style={s.btnPrimaryText}>Iniciar sesión</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={s.btnSecondary}
+                  onPress={() => navigation.navigate('Register')}
+                  activeOpacity={0.88}
+                >
+                  <Text style={s.btnSecondaryText}>Crear cuenta nueva</Text>
+                </TouchableOpacity>
+              </View>
+
+            ) : (
+              /* ── FORMULARIO ── */
+              <View style={s.card}>
+                {/* Logo pequeño arriba */}
+                <View style={s.logoWrapSm}>
+                  <Image
+                    source={require('../../../../assets/logo1.0.png')}
+                    style={s.logoSm}
+                    resizeMode="contain"
+                  />
+                </View>
+
+                <TouchableOpacity style={s.backRow} onPress={() => setShowForm(false)}>
+                  <Text style={s.backArrow}>‹</Text>
+                  <Text style={s.backText}>Volver</Text>
+                </TouchableOpacity>
+
+                <Text style={s.formTitle}>Ingresar</Text>
+                <Text style={s.formSub}>Accede a tu cuenta NutriQuest</Text>
+
+                <View style={s.fieldGroup}>
+                  <Text style={s.fieldLabel}>Correo electrónico</Text>
                   <TextInput
                     style={s.input}
                     value={email}
                     onChangeText={setEmail}
                     keyboardType="email-address"
                     autoCapitalize="none"
-                    placeholderTextColor="#888"
-                    placeholder="ejemplo@email.com"
+                    placeholder="ejemplo@uao.edu.co"
+                    placeholderTextColor="rgba(255,255,255,0.4)"
                   />
-                  <Text style={s.label}>Contraseña:</Text>
+                </View>
+
+                <View style={s.fieldGroup}>
+                  <Text style={s.fieldLabel}>Contraseña</Text>
                   <TextInput
                     style={s.input}
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
-                    placeholderTextColor="#888"
+                    placeholder="Tu contraseña"
+                    placeholderTextColor="rgba(255,255,255,0.4)"
                   />
-                  <TouchableOpacity style={s.btnSubmit} onPress={handleLogin} disabled={loading}>
-                    {loading
-                      ? <ActivityIndicator color="#333" />
-                      : <Text style={s.btnSubmitText}>Ingresar</Text>
-                    }
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                    <Text style={s.termsLink}>Registrar</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => setShowForm(false)} style={s.backBtn}>
-                    <Text style={s.backBtnText}>← Volver</Text>
-                  </TouchableOpacity>
                 </View>
-              )}
-            </View>
-          </ScrollView>
+
+                <TouchableOpacity
+                  style={s.btnPrimary}
+                  onPress={handleLogin}
+                  disabled={loading}
+                  activeOpacity={0.88}
+                >
+                  {loading
+                    ? <ActivityIndicator color={GREEN_DARK} />
+                    : <Text style={s.btnPrimaryText}>Ingresar</Text>
+                  }
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('Register')}
+                  style={s.registerLink}
+                >
+                  <Text style={s.registerLinkText}>
+                    ¿No tienes cuenta?{' '}
+                    <Text style={s.registerLinkBold}>Regístrate aquí</Text>
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+          </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </ImageBackground>
@@ -123,72 +174,102 @@ const s = StyleSheet.create({
   },
   safe: { flex: 1 },
   flex: { flex: 1 },
-  scrollContainer: {
-    flexGrow: 1,
-    justifyContent: 'center', // Centra el contenido verticalmente si hay espacio
-    paddingHorizontal: Spacing.xl,
-    paddingBottom: 40,
-  },
-  content: {
+
+  // Centrado vertical real
+  centered: {
     flex: 1,
-    justifyContent: 'flex-end',
-    paddingBottom: 20,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 24,
   },
-  logoSection: {
-    alignItems: 'center',
-    paddingTop: 40,
-    marginBottom: 20,
+
+  // Card glass
+  card: {
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 32,
+    padding: 28,
+    gap: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
-  logo: { width: 300, height: 150 },
-  actions: { alignItems: 'center', gap: Spacing.base },
-  btnIniciar: {
-    backgroundColor: '#d1d1d1',
-    paddingVertical: 15,
-    width: '80%',
+
+  // Logo grande (landing)
+  logoWrap: { alignItems: 'center', paddingVertical: 8 },
+  logo: { width: 180, height: 100 },
+
+  // Divider
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    marginVertical: 2,
+  },
+
+  // Logo pequeño (form)
+  logoWrapSm: { alignItems: 'center', marginBottom: -4 },
+  logoSm: { width: 100, height: 56 },
+
+  // Landing
+  landingTitle: { fontSize: 26, fontWeight: '900', color: WHITE },
+  landingSub: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.7)',
+    lineHeight: 21,
+  },
+  legalText: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.35)',
+    textAlign: 'center',
+  },
+
+  // Form
+  backRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: -4 },
+  backArrow: { fontSize: 30, color: 'rgba(255,255,255,0.6)', lineHeight: 34 },
+  backText: { fontSize: 14, color: 'rgba(255,255,255,0.6)', fontWeight: '600' },
+  formTitle: { fontSize: 28, fontWeight: '900', color: WHITE },
+  formSub: { fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: -6 },
+
+  fieldGroup: { gap: 6 },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: 'rgba(255,255,255,0.6)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  input: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 14,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    fontSize: 15,
+    color: WHITE,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+  },
+
+  // Botones
+  btnPrimary: {
+    backgroundColor: WHITE,
     borderRadius: BorderRadius.full,
+    paddingVertical: 15,
     alignItems: 'center',
-    elevation: 5,
+    elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
-    shadowRadius: 6,
+    shadowRadius: 8,
   },
-  btnIniciarText: { fontSize: 18, fontWeight: '600', color: '#333' },
-  termsLink: {
-    color: 'white',
-    textDecorationLine: 'underline',
-    fontSize: 15,
-    textAlign: 'center',
-    marginTop: Spacing.sm,
-  },
-  form: { gap: Spacing.sm },
-  formTitle: {
-    color: 'white',
-    fontSize: 42,
-    fontWeight: '900',
-    textAlign: 'center',
-    marginBottom: Spacing.base,
-  },
-  label: { color: 'white', fontSize: 18, marginBottom: 4 },
-  input: {
-    backgroundColor: '#dcdcdc',
+  btnPrimaryText: { fontSize: 16, fontWeight: '800', color: GREEN_DARK },
+  btnSecondary: {
     borderRadius: BorderRadius.full,
-    paddingHorizontal: Spacing.xl,
-    paddingVertical: Spacing.md,
-    fontSize: 16,
-    marginBottom: Spacing.sm,
-  },
-  btnSubmit: {
-    backgroundColor: '#dcdcdc',
-    borderRadius: BorderRadius.full,
-    paddingVertical: 12,
+    paddingVertical: 14,
     alignItems: 'center',
-    alignSelf: 'center',
-    paddingHorizontal: 50,
-    marginTop: Spacing.sm,
-    elevation: 5,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
-  btnSubmitText: { fontSize: 20, fontWeight: '600', color: '#222' },
-  backBtn: { alignItems: 'center', marginTop: Spacing.sm },
-  backBtnText: { color: 'white', fontSize: 15, textDecorationLine: 'underline' },
+  btnSecondaryText: { fontSize: 16, fontWeight: '700', color: WHITE },
+
+  registerLink: { alignItems: 'center' },
+  registerLinkText: { fontSize: 13, color: 'rgba(255,255,255,0.55)', textAlign: 'center' },
+  registerLinkBold: { color: WHITE, fontWeight: '800', textDecorationLine: 'underline' },
 });
