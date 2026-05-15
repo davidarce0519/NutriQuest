@@ -16,6 +16,7 @@ import {
 import { supabase } from '../../../data/supabase/supabaseClient';
 import { BorderRadius } from '../../../infrastructure/theme';
 
+
 const GREEN = '#1a6b0a';
 const GREEN_DARK = '#042901';
 const GREEN_LIGHT = '#c1d9b7';

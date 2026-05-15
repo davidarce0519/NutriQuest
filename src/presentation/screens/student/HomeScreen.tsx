@@ -6,16 +6,21 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+
+// --- STORES E INFRAESTRUCTURA ---
 import { useAuthStore } from '../../../infrastructure/stores/authStore';
 import { useHealthStore } from '../../../infrastructure/stores/healthStore';
+import { useTheme } from '../../../infrastructure/theme/ThemeContext'; // <--- CAMBIO: Importamos el contexto global
+
+// --- DOMINIO / CASOS DE USO ---
 import { getProgressUseCase } from '../../../domain/usecases/avatar';
 import { getSuggestionUseCase } from '../../../domain/usecases/suggestion';
 import { AvatarProgress, Suggestion } from '../../../domain/models';
-import { BorderRadius } from '../../../infrastructure/theme';
 import { StudentTabParams } from '../../navigation/StudentNavigator';
 
 type Nav = BottomTabNavigationProp<StudentTabParams>;
 
+// Constantes de color fijas
 const GREEN = '#1a6b0a';
 const GREEN_DARK = '#042901';
 const GREEN_LIGHT = '#c1d9b7';
@@ -33,14 +38,14 @@ export const HomeScreen = () => {
   const user = useAuthStore((s) => s.user);
   const profile = useHealthStore((s) => s.profile);
   
+  // --- CONSUMO DEL TEMA GLOBAL ---
+  const { isDark, toggleTheme } = useTheme(); // <--- CAMBIO: Ya no es local, viene del Provider
+
   // --- ESTADOS DE DATOS ---
   const [progress, setProgress] = useState<AvatarProgress | null>(null);
   const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
-  
-  // --- ESTADO MODO OSCURO ---
-  const [isDark, setIsDark] = useState(false);
 
-  // Paleta de colores dinámica
+  // Paleta de colores dinámica basada en el estado global
   const theme = {
     bg: isDark ? '#121212' : '#f5f5f0',
     card: isDark ? '#1e1e1e' : '#ffffff',
@@ -63,6 +68,7 @@ export const HomeScreen = () => {
 
   return (
     <View style={[s.container, { backgroundColor: theme.bg }]}>
+      {/* Franja superior dinámica */}
       <View style={[s.topStrip, { backgroundColor: theme.strip }]} />
 
       <SafeAreaView style={s.safe}>
@@ -88,10 +94,10 @@ export const HomeScreen = () => {
               </View>
             </View>
 
-            {/* BOTÓN TOGGLE MODO OSCURO */}
+            {/* BOTÓN TOGGLE MODO OSCURO (GLOBAL) */}
             <TouchableOpacity 
               style={s.themeBtn} 
-              onPress={() => setIsDark(!isDark)}
+              onPress={toggleTheme} // <--- CAMBIO: Dispara el cambio en toda la app
               activeOpacity={0.7}
             >
               <Text style={s.themeIcon}>{isDark ? '☀️' : '🌙'}</Text>
@@ -132,12 +138,12 @@ export const HomeScreen = () => {
               onPress={() => navigation.navigate('Progreso')}
               activeOpacity={0.88}
             >
-              <Text style={s.smallCardTag}>Progreso</Text>
+              <Text style={[s.smallCardTag, { color: theme.subText }]}>Progreso</Text>
               <Text style={s.avatarEmoji}>{AVATAR_EMOJIS[progress?.currentLevel ?? 1]}</Text>
               <Text style={[s.progressLevel, { color: isDark ? GREEN_LIGHT : GREEN_DARK }]}>
                 Nivel {progress?.currentLevel ?? 1}
               </Text>
-              <View style={s.miniBarBg}>
+              <View style={[s.miniBarBg, { backgroundColor: isDark ? '#334155' : '#e2e8f0' }]}>
                 <View style={[s.miniBarFill, { width: `${progressPct}%` as any }]} />
               </View>
             </TouchableOpacity>
@@ -187,7 +193,7 @@ export const HomeScreen = () => {
             </View>
           </View>
 
-          <Text style={s.legalText}>
+          <Text style={[s.legalText, { color: theme.subText }]}>
             ⚠️ Contenido educativo · NutriQuest 2026
           </Text>
 
@@ -197,6 +203,7 @@ export const HomeScreen = () => {
   );
 };
 
+// ... (Estilos iguales, se aplicaron las variables dinámicas arriba en el JSX)
 const s = StyleSheet.create({
   container: { flex: 1 },
   topStrip: {
@@ -208,7 +215,6 @@ const s = StyleSheet.create({
   },
   safe: { flex: 1 },
   scroll: { paddingHorizontal: 18, paddingBottom: 32, gap: 14 },
-
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -220,7 +226,6 @@ const s = StyleSheet.create({
   logo: { width: 90, height: 45 },
   greetingText: { fontSize: 12, color: GREEN_LIGHT, fontWeight: '600' },
   nameText: { fontSize: 20, fontWeight: '900', color: '#ffffff' },
-
   themeBtn: {
     backgroundColor: 'rgba(255,255,255,0.2)',
     width: 44,
@@ -232,7 +237,6 @@ const s = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.3)',
   },
   themeIcon: { fontSize: 20 },
-
   heroCard: {
     backgroundColor: GREEN_DARK,
     borderRadius: 28,
@@ -255,7 +259,6 @@ const s = StyleSheet.create({
     marginTop: 4,
   },
   heroBtnText: { fontSize: 12, fontWeight: '800', color: '#ffffff' },
-
   row: { flexDirection: 'row', gap: 12 },
   smallCard: {
     flex: 1,
@@ -264,15 +267,14 @@ const s = StyleSheet.create({
     elevation: 3,
   },
   streakCard: { backgroundColor: GREEN_DARK },
-  smallCardTag: { fontSize: 10, fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase' },
+  smallCardTag: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
   smallCardTagLight: { fontSize: 10, fontWeight: '700', color: GREEN_LIGHT, textTransform: 'uppercase' },
   avatarEmoji: { fontSize: 28, marginVertical: 4 },
   progressLevel: { fontSize: 16, fontWeight: '900' },
-  miniBarBg: { height: 4, backgroundColor: '#e2e8f0', borderRadius: 2, marginTop: 6 },
+  miniBarBg: { height: 4, borderRadius: 2, marginTop: 6 },
   miniBarFill: { height: '100%', backgroundColor: GREEN, borderRadius: 2 },
   streakNumber: { fontSize: 36, fontWeight: '900', color: '#ffffff' },
   streakLabel: { fontSize: 14, fontWeight: '700', color: GREEN_LIGHT },
-
   sectionLabel: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', marginTop: 10 },
   quickGrid: { flexDirection: 'row', gap: 10 },
   quickCard: {
@@ -285,7 +287,6 @@ const s = StyleSheet.create({
   },
   quickIcon: { fontSize: 24 },
   quickLabel: { fontSize: 10, fontWeight: '700' },
-
   raCard: { borderRadius: 24, overflow: 'hidden', elevation: 3 },
   raMain: { backgroundColor: GREEN_LIGHT, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   raTag: { fontSize: 10, fontWeight: '700', color: GREEN },
@@ -293,6 +294,5 @@ const s = StyleSheet.create({
   raEmoji: { fontSize: 38 },
   raSecond: { padding: 12, alignItems: 'center' },
   raSecondText: { fontSize: 13, fontWeight: '700' },
-
-  legalText: { fontSize: 10, color: '#94a3b8', textAlign: 'center', marginTop: 10 },
+  legalText: { fontSize: 10, textAlign: 'center', marginTop: 10 },
 });

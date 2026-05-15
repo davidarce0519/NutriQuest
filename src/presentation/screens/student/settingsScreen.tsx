@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../../../infrastructure/stores/authStore';
 
+
 // Mantenemos tu paleta de colores original
 const GREEN = '#1a6b0a';
 const GREEN_DARK = '#042901';

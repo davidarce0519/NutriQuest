@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Spacing, BorderRadius } from '../../../infrastructure/theme';
 
+
 const GREEN       = '#1a6b0a';
 const GREEN_DARK  = '#042901';
 const CARD_LIGHT  = '#dce7da';

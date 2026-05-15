@@ -6,6 +6,8 @@ import { AuthNavigator }         from './AuthNavigator';
 import { StudentNavigator }      from './StudentNavigator';
 import { NutritionistNavigator } from './NutritionistNavigator';
 import { AdminNavigator }        from './AdminNavigator';
+// src/presentation/navigation/AppNavigator.tsx
+import { ThemeProvider } from '../../infrastructure/theme/ThemeContext';
 
 const Stack = createNativeStackNavigator();
 
@@ -28,3 +30,4 @@ export const AppNavigator = () => {
     </NavigationContainer>
   );
 };
+
