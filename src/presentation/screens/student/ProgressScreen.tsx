@@ -425,7 +425,7 @@ const s = StyleSheet.create({
   avatarBadge:     { borderRadius: BorderRadius.full, paddingHorizontal: 14, paddingVertical: 5 },
   avatarBadgeText: { fontSize: 12, fontWeight: '700' },
   avatarLevel:     { fontSize: 26, fontWeight: '900' },
-  avatarDesc:      { fontSize: 13, textAlign: 'center', lineHeight: 18 },
+  avatarDesc:      { fontSize: 13, textAlign: 'center', lineHeight: 20 },
 
   progressSection:    { width: '100%', gap: 6, marginTop: 4 },
   progressLabelRow:   { flexDirection: 'row', justifyContent: 'space-between' },

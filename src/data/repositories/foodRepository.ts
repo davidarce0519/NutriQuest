@@ -24,6 +24,28 @@ const mapFood = (d: any): Food => ({
   isActive:             d.is_active,
 });
 
+// Convierte Partial<Food> (camelCase) a payload de BD (snake_case)
+const toDbPayload = (food: Partial<Food>): Record<string, unknown> => {
+  const p: Record<string, unknown> = {};
+  if (food.name               !== undefined) p.name                 = food.name;
+  if (food.description        !== undefined) p.description          = food.description;
+  if (food.nutritionalBenefits !== undefined) p.nutritional_benefits = food.nutritionalBenefits;
+  if (food.prepTimeMinutes    !== undefined) p.prep_time_minutes    = food.prepTimeMinutes;
+  if (food.energyLevel        !== undefined) p.energy_level         = food.energyLevel;
+  if (food.imageUrl           !== undefined) p.image_url            = food.imageUrl;
+  if (food.isQuick            !== undefined) p.is_quick             = food.isQuick;
+  if (food.ingredientsSummary !== undefined) p.ingredients_summary  = food.ingredientsSummary;
+  if (food.caloriesKcal       !== undefined) p.calories_kcal        = food.caloriesKcal;
+  if (food.proteinG           !== undefined) p.protein_g            = food.proteinG;
+  if (food.carbsG             !== undefined) p.carbs_g              = food.carbsG;
+  if (food.fatG               !== undefined) p.fat_g                = food.fatG;
+  if (food.fiberG             !== undefined) p.fiber_g              = food.fiberG;
+  if (food.bestForGoal        !== undefined) p.best_for_goal        = food.bestForGoal;
+  if (food.suitableDietTypes  !== undefined) p.suitable_diet_types  = food.suitableDietTypes;
+  if (food.isActive           !== undefined) p.is_active            = food.isActive;
+  return p;
+};
+
 export const foodRepository = {
   async getAll(): Promise<Food[]> {
     const { data, error } = await supabase
@@ -76,6 +98,86 @@ export const foodRepository = {
       .in('category', ['alergia', 'restriccion', 'intolerancia']);
     if (error) throw error;
     return (data ?? []).map((d: any) => d.value as string);
+  },
+
+  // Retorna TODOS los alimentos (incluyendo inactivos) para gestión del nutricionista
+  async getAllAdmin(): Promise<Food[]> {
+    const { data, error } = await supabase
+      .from('foods')
+      .select('*')
+      .order('name');
+    if (error) throw error;
+    return data.map(mapFood);
+  },
+
+  async create(food: Partial<Food>): Promise<Food> {
+    const payload = { ...toDbPayload(food), is_active: food.isActive ?? true };
+    const { data, error } = await supabase
+      .from('foods')
+      .insert(payload)
+      .select()
+      .single();
+    if (error) throw error;
+    return mapFood(data);
+  },
+
+  async update(id: string, food: Partial<Food>): Promise<Food> {
+    const { data, error } = await supabase
+      .from('foods')
+      .update(toDbPayload(food))
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) throw error;
+    return mapFood(data);
+  },
+
+  async toggleActive(id: string, isActive: boolean): Promise<void> {
+    const { error } = await supabase
+      .from('foods')
+      .update({ is_active: isActive })
+      .eq('id', id);
+    if (error) throw error;
+  },
+
+  async validate(id: string, validatorId: string, validatorName: string): Promise<void> {
+    const { error } = await supabase
+      .from('foods')
+      .update({
+        validated_by:   validatorId,
+        validator_name: validatorName,
+        validated_at:   new Date().toISOString(),
+      })
+      .eq('id', id);
+    if (error) throw error;
+  },
+
+  async search(query: string): Promise<Food[]> {
+    const { data, error } = await supabase
+      .from('foods')
+      .select('*')
+      .ilike('name', `%${query}%`)
+      .order('name');
+    if (error) throw error;
+    return data.map(mapFood);
+  },
+
+  async getValidatedFoodsCount(userId: string): Promise<number> {
+    const { count, error } = await supabase
+      .from('foods')
+      .select('id', { count: 'exact', head: true })
+      .eq('validated_by', userId);
+    if (error) throw error;
+    return count ?? 0;
+  },
+
+  async getActiveFoodsCount(): Promise<number> {
+    const { count, error } = await supabase
+      .from('foods')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_active', true);
+    if (error) throw error;
+    return count ?? 0;
   },
 
   async upsert(food: Partial<Food>, validatorId: string, validatorName: string): Promise<Food> {

@@ -94,10 +94,10 @@ export const HomeScreen = () => {
               </View>
               <Text style={s.heroEmoji}>{suggestion ? '✨' : '🥗'}</Text>
             </View>
-            <Text style={s.heroTitle}>
+            <Text style={s.heroTitle} numberOfLines={2}>
               {suggestion ? suggestion.food.name : '¿Qué comemos hoy?'}
             </Text>
-            <Text style={s.heroSub}>
+            <Text style={s.heroSub} numberOfLines={2}>
               {suggestion
                 ? `⏱ ${suggestion.food.prepTimeMinutes ?? '–'} min · Toca para responder`
                 : 'Toca para obtener tu sugerencia personalizada'}

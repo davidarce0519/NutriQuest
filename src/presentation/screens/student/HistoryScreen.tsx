@@ -271,34 +271,119 @@ export const HistoryScreen = () => {
     </View>
   );
 
-  // ── Footer: Top alimentos ──
+  // ── Patrones calculados en cliente ──────────────────────────
+  const RANK_COLORS = ['#fbbf24', '#94a3b8', '#d97706'];
+  const DAYS_ES     = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+  const computeInsights = () => {
+    const accepted = history.filter(s => s.response === 'aceptada');
+    if (accepted.length === 0) return null;
+
+    // Insight 1 — franja horaria más activa
+    const hourBins = { mañana: 0, tarde: 0, noche: 0 };
+    for (const s of accepted) {
+      const h = new Date(s.suggestedAt).getHours();
+      if (h >= 6 && h < 12)       hourBins.mañana++;
+      else if (h >= 12 && h < 18) hourBins.tarde++;
+      else if (h >= 18 && h < 24) hourBins.noche++;
+    }
+    const topBin = (Object.entries(hourBins) as [keyof typeof hourBins, number][])
+      .sort((a, b) => b[1] - a[1])[0][0];
+    const timeInsight = `🌅 Sueles aceptar más sugerencias por la ${topBin}`;
+
+    // Insight 2 — racha más larga
+    const acceptedDates = [...new Set(
+      accepted.map(s => new Date(s.suggestedAt).toDateString()),
+    )].sort();
+    let maxStreak = 0;
+    let curStreak = 1;
+    for (let i = 1; i < acceptedDates.length; i++) {
+      const diff = (new Date(acceptedDates[i]).getTime() - new Date(acceptedDates[i - 1]).getTime())
+        / 86400000;
+      if (diff === 1) { curStreak++; maxStreak = Math.max(maxStreak, curStreak); }
+      else { curStreak = 1; }
+    }
+    if (acceptedDates.length === 1) maxStreak = 1;
+    const streakInsight = maxStreak >= 2
+      ? `🔥 Tu racha más larga fue de ${maxStreak} días`
+      : '🌱 Empieza a construir tu racha aceptando sugerencias';
+
+    // Insight 3 — día de la semana favorito
+    const dayCounts: Record<number, number> = {};
+    for (const s of accepted) {
+      const d = new Date(s.suggestedAt).getDay();
+      dayCounts[d] = (dayCounts[d] ?? 0) + 1;
+    }
+    const topDay = Object.entries(dayCounts).sort((a, b) => b[1] - a[1])[0];
+    const dayInsight = `📅 Los ${DAYS_ES[Number(topDay[0])]} tomas mejores decisiones`;
+
+    return [timeInsight, streakInsight, dayInsight];
+  };
+
+  const insights = history.length >= 5 ? computeInsights() : null;
+
+  // ── Footer: Favoritos + Patrones ────────────────────────────
   const ListFooter = topFoods.length > 0 ? (
-    <View style={[s.topFoodsCard, { backgroundColor: cardBg, shadowOpacity: isDark ? 0.3 : 0.06 }]}>
-      <Text style={[s.sectionLabel, { color: textMuted, marginBottom: 4 }]}>⭐ Tus favoritos</Text>
-      <Text style={[s.topFoodsIntro, { color: textMuted }]}>Basado en tus últimas decisiones</Text>
-      <View style={s.topFoodsList}>
-        {topFoods.map((item, i) => (
-          <View key={i} style={[s.topFoodRow, { borderTopWidth: i > 0 ? 1 : 0, borderColor: border }]}>
-            {item.food.imageUrl ? (
-              <Image source={{ uri: item.food.imageUrl }} style={s.topFoodImage} />
-            ) : (
-              <View style={[s.topFoodAvatar, { backgroundColor: green + '20' }]}>
-                <Text style={[s.topFoodLetter, { color: green }]}>
-                  {item.food.name[0]?.toUpperCase()}
+    <View style={s.footerWrap}>
+
+      {/* ⭐ Tus favoritos */}
+      <View style={[s.topFoodsCard, { backgroundColor: cardBg, shadowOpacity: isDark ? 0.3 : 0.06 }]}>
+        <Text style={[s.sectionLabel, { color: textMuted, marginBottom: 4 }]}>⭐ Tus favoritos</Text>
+        <Text style={[s.topFoodsIntro, { color: textMuted }]}>Basado en tus últimas decisiones</Text>
+        <View style={s.topFoodsList}>
+          {topFoods.map((item, i) => (
+            <TouchableOpacity
+              key={i}
+              style={[s.topFoodRow, { borderTopWidth: i > 0 ? 1 : 0, borderColor: border }]}
+              onPress={() => navigation.navigate('DetalleAlimento', { food: item.food })}
+              activeOpacity={0.8}
+            >
+              {/* Posición con círculo de color */}
+              <View style={[s.rankBadge, { backgroundColor: RANK_COLORS[i] ?? (green + '40') }]}>
+                <Text style={s.rankText}>#{i + 1}</Text>
+              </View>
+
+              {item.food.imageUrl ? (
+                <Image source={{ uri: item.food.imageUrl }} style={s.topFoodImage} />
+              ) : (
+                <View style={[s.topFoodAvatar, { backgroundColor: green + '20' }]}>
+                  <Text style={[s.topFoodLetter, { color: green }]}>
+                    {item.food.name[0]?.toUpperCase()}
+                  </Text>
+                </View>
+              )}
+              <Text style={[s.topFoodName, { color: textPrimary }]} numberOfLines={1}>
+                {item.food.name}
+              </Text>
+              <View style={[s.topFoodCountPill, { backgroundColor: green + '18' }]}>
+                <Text style={[s.topFoodCountText, { color: green }]}>
+                  {item.count}×
                 </Text>
               </View>
-            )}
-            <Text style={[s.topFoodName, { color: textPrimary }]} numberOfLines={1}>
-              {item.food.name}
-            </Text>
-            <View style={[s.topFoodCountPill, { backgroundColor: green + '18' }]}>
-              <Text style={[s.topFoodCountText, { color: green }]}>
-                {item.count}× aceptado
-              </Text>
-            </View>
-          </View>
-        ))}
+              <Text style={[s.topFoodChevron, { color: textMuted }]}>›</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
+
+      {/* 💡 Tus patrones */}
+      {insights && (
+        <View style={s.patternsSection}>
+          <Text style={[s.sectionLabel, { color: textMuted, marginBottom: 8 }]}>💡 Tus patrones</Text>
+          {insights.map((insight, i) => (
+            <View
+              key={i}
+              style={[s.insightCard, { backgroundColor: cardBg, borderLeftColor: green }]}
+            >
+              <Text style={[s.insightText, { color: textSecondary }]}>{insight}</Text>
+            </View>
+          ))}
+          <Text style={[s.patternsFootnote, { color: textMuted }]}>
+            📝 Este historial es una herramienta de reflexión, no una evaluación
+          </Text>
+        </View>
+      )}
+
     </View>
   ) : null;
 
@@ -415,7 +500,7 @@ const s = StyleSheet.create({
     elevation: 2, shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4,
   },
-  reflectionText: { fontSize: 13, lineHeight: 19 },
+  reflectionText: { fontSize: 13, lineHeight: 20 },
 
   filtersRow:  { flexDirection: 'row', gap: 8 },
   filterBtn: {
@@ -451,8 +536,10 @@ const s = StyleSheet.create({
   emptyTitle: { fontSize: 18, fontWeight: '800' },
   emptySub:   { fontSize: 13, textAlign: 'center' },
 
+  footerWrap: { gap: 14, marginTop: 6 },
+
   topFoodsCard: {
-    borderRadius: 20, padding: 16, marginTop: 6,
+    borderRadius: 20, padding: 16,
     elevation: 4, shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 }, shadowRadius: 8,
   },
@@ -460,11 +547,14 @@ const s = StyleSheet.create({
   topFoodsList:  { gap: 0 },
   topFoodRow: {
     flexDirection: 'row', alignItems: 'center',
-    gap: 12, paddingVertical: 10,
+    gap: 10, paddingVertical: 10,
   },
-  topFoodImage: {
-    width: 40, height: 40, borderRadius: 20,
+  rankBadge: {
+    width: 28, height: 28, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center',
   },
+  rankText: { fontSize: 10, fontWeight: '900', color: '#ffffff' },
+  topFoodImage: { width: 40, height: 40, borderRadius: 20 },
   topFoodAvatar: {
     width: 40, height: 40, borderRadius: 20,
     alignItems: 'center', justifyContent: 'center',
@@ -473,4 +563,15 @@ const s = StyleSheet.create({
   topFoodName:      { flex: 1, fontSize: 14, fontWeight: '700' },
   topFoodCountPill: { borderRadius: BorderRadius.full, paddingHorizontal: 10, paddingVertical: 4 },
   topFoodCountText: { fontSize: 11, fontWeight: '700' },
+  topFoodChevron:   { fontSize: 18, fontWeight: '700' },
+
+  patternsSection: { gap: 8 },
+  insightCard: {
+    borderRadius: 14, borderLeftWidth: 3, borderWidth: 0,
+    padding: 14,
+    elevation: 2, shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4,
+  },
+  insightText:     { fontSize: 13, lineHeight: 20 },
+  patternsFootnote:{ fontSize: 11, textAlign: 'center', marginTop: 4 },
 });

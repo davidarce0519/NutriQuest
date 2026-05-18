@@ -845,7 +845,7 @@ const s = StyleSheet.create({
     borderRadius: 12, padding: 10, borderLeftWidth: 3,
   },
   emotionalIcon: { fontSize: 14 },
-  emotionalText: { flex: 1, fontSize: 12, fontStyle: 'italic', lineHeight: 17 },
+  emotionalText: { flex: 1, fontSize: 12, fontStyle: 'italic', lineHeight: 18 },
 
   prepChips:    { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   prepChip:     { borderRadius: BorderRadius.full, paddingHorizontal: 10, paddingVertical: 5, borderWidth: 1 },
@@ -860,7 +860,7 @@ const s = StyleSheet.create({
 
   infoRow:     { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   infoRowIcon: { fontSize: 14, marginTop: 1 },
-  infoRowText: { flex: 1, fontSize: 12, lineHeight: 18 },
+  infoRowText: { flex: 1, fontSize: 12, lineHeight: 20 },
 
   benefitsBox:   { borderRadius: 12, padding: 12, gap: 5 },
   benefitsLabel: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.4 },
@@ -873,7 +873,7 @@ const s = StyleSheet.create({
   },
   macroIcon: { fontSize: 13 },
   macroVal:  { fontSize: 13, fontWeight: '900' },
-  macroUnit: { fontSize: 9 },
+  macroUnit: { fontSize: 10 },
 
   seal:     { borderRadius: 10, padding: 8, borderWidth: 1 },
   sealText: { fontSize: 11, fontWeight: '600' },

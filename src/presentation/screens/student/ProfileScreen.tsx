@@ -587,6 +587,7 @@ export const ProfileScreen = () => {
                           style={[s.prefAddBtn, { backgroundColor: cat.color }]}
                           onPress={() => openAddModal(cat)}
                           activeOpacity={0.8}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         >
                           <Text style={s.prefAddBtnText}>+</Text>
                         </TouchableOpacity>
@@ -953,7 +954,7 @@ const s = StyleSheet.create({
   saveBtnText: { color: '#ffffff', fontSize: 16, fontWeight: '800' },
 
   secondaryActions: { gap: 10, marginTop: 4 },
-  deleteBtn: { borderWidth: 1.5, borderRadius: BorderRadius.full, paddingVertical: 14, alignItems: 'center' },
+  deleteBtn: { borderWidth: 1.5, borderRadius: BorderRadius.full, paddingVertical: 14, alignItems: 'center', borderColor: '#ef4444' },
   deleteBtnText: { color: '#ef4444', fontSize: 14, fontWeight: '700' },
   deleteAccountBtn: {
     backgroundColor: '#ef4444',

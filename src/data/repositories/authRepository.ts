@@ -1,5 +1,5 @@
 import { supabase } from '../supabase/supabaseClient';
-import { User } from '../../domain/models';
+import { User, UserRole } from '../../domain/models';
 import { ENV } from '../../infrastructure/config/env';
 
 const mapProfile = (data: any): User => ({
@@ -116,6 +116,45 @@ export const authRepository = {
     }
 
     await supabase.auth.signOut();
+  },
+
+  async getStudentProfiles(): Promise<User[]> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('role', 'estudiante')
+      .eq('is_active', true)
+      .order('full_name');
+    if (error) throw error;
+    return (data ?? []).map(mapProfile);
+  },
+
+  async getAllUsers(): Promise<User[]> {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map(mapProfile);
+  },
+
+  async changeUserRole(userId: string, role: UserRole): Promise<void> {
+    const { error } = await supabase.from('profiles').update({ role }).eq('id', userId);
+    if (error) throw error;
+  },
+
+  async toggleUserActive(userId: string, isActive: boolean): Promise<void> {
+    const { error } = await supabase.from('profiles').update({ is_active: isActive }).eq('id', userId);
+    if (error) throw error;
+  },
+
+  async getActiveUsersCount(): Promise<number> {
+    const { count, error } = await supabase
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_active', true);
+    if (error) throw error;
+    return count ?? 0;
   },
 
   onAuthStateChange(callback: (event: string, session: any) => void) {

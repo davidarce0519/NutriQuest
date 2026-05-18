@@ -1,4 +1,5 @@
 import { authRepository } from '../../../data/repositories/authRepository';
+import { User, UserRole } from '../../models';
 
 export const loginUseCase = async (email: string, password: string) => {
   if (!email || !password) throw new Error('Email y contraseña son requeridos');
@@ -39,4 +40,26 @@ export const deleteUserDataUseCase = async (userId: string): Promise<void> => {
 
 export const deleteAccountUseCase = async (): Promise<void> => {
   await authRepository.deleteAccount();
+};
+
+export const getStudentProfilesUseCase = async (): Promise<User[]> => {
+  return authRepository.getStudentProfiles();
+};
+
+export const getAllUsersUseCase = async (): Promise<User[]> => {
+  return authRepository.getAllUsers();
+};
+
+export const changeUserRoleUseCase = async (userId: string, role: UserRole): Promise<void> => {
+  if (!userId || !role) throw new Error('Usuario y rol son requeridos');
+  return authRepository.changeUserRole(userId, role);
+};
+
+export const toggleUserActiveUseCase = async (userId: string, isActive: boolean): Promise<void> => {
+  if (!userId) throw new Error('Usuario requerido');
+  return authRepository.toggleUserActive(userId, isActive);
+};
+
+export const getActiveUsersCountUseCase = async (): Promise<number> => {
+  return authRepository.getActiveUsersCount();
 };
