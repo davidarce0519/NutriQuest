@@ -315,7 +315,7 @@ export const ProfileScreen = () => {
 
   const handleDeleteData = () => {
     Alert.alert(
-      '⚠️ Eliminar mis datos',
+      'Eliminar mis datos',
       'Esta acción eliminará permanentemente:\n\n• Tu historial de sugerencias\n• Tus preferencias alimentarias\n• Tus datos biométricos\n• Tu progreso del avatar\n\nTu cuenta permanecerá activa.',
       [
         { text: 'Cancelar', style: 'cancel' },
@@ -360,7 +360,7 @@ export const ProfileScreen = () => {
       setBmiPreview(null);
       setPreferences([]);
       Alert.alert(
-        '✅ Datos eliminados',
+        'Datos eliminados',
         'Todos tus datos han sido eliminados correctamente. Tu cuenta sigue activa y puedes volver a configurar tu perfil.',
         [{ text: 'Entendido' }],
       );
@@ -373,7 +373,7 @@ export const ProfileScreen = () => {
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      '🚨 Eliminar cuenta',
+      'Eliminar cuenta',
       'Esta acción es IRREVERSIBLE.\n\nSe eliminará:\n• Tu cuenta completa\n• Todos tus datos\n• Tu historial\n• Tu progreso\n\nNo podrás recuperar tu cuenta.',
       [
         { text: 'Cancelar', style: 'cancel' },
@@ -826,7 +826,7 @@ export const ProfileScreen = () => {
             >
               {deleting
                 ? <ActivityIndicator color="#ef4444" size="small" />
-                : <Text style={s.deleteBtnText}>🗑  Eliminar mis datos</Text>
+                : <Text style={s.deleteBtnText}>Eliminar mis datos</Text>
               }
             </TouchableOpacity>
 
@@ -837,7 +837,7 @@ export const ProfileScreen = () => {
             >
               {deleting
                 ? <ActivityIndicator color="#ffffff" size="small" />
-                : <Text style={s.deleteAccountBtnText}>🚨 Eliminar mi cuenta</Text>
+                : <Text style={s.deleteAccountBtnText}>Eliminar mi cuenta</Text>
               }
             </TouchableOpacity>
 
@@ -845,7 +845,7 @@ export const ProfileScreen = () => {
               style={[s.logoutBtn, { backgroundColor: inputBg, borderColor: border }]}
               onPress={handleLogout}
             >
-              <Text style={[s.logoutBtnText, { color: textSecondary }]}>↪ Cerrar sesión</Text>
+              <Text style={[s.logoutBtnText, { color: textSecondary }]}>Cerrar sesión</Text>
             </TouchableOpacity>
           </View>
 

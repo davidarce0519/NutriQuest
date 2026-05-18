@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, Image,
+  TouchableOpacity, Image, Linking, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -15,6 +15,7 @@ import { AvatarProgress, Suggestion } from '../../../domain/models';
 import { StudentTabParams } from '../../navigation/StudentNavigator';
 
 type Nav = BottomTabNavigationProp<StudentTabParams>;
+type QuickItem = { icon: string; label: string; tab?: keyof StudentTabParams; onPress?: () => void };
 
 const GREEN = '#1a6b0a';
 const GREEN_DARK = '#042901';
@@ -51,6 +52,28 @@ export const HomeScreen = () => {
     getProgressUseCase(user.id).then(setProgress).catch(() => { });
     getSuggestionUseCase(user.id).then(setSuggestion).catch(() => { });
   }, [user]);
+
+  const handleOpenGame = async () => {
+    const packageName = 'com.unity.template.ar_mobile';
+
+    // Formato alternativo que funciona mejor en Android
+    const url = `intent://launch/#Intent;scheme=launch;package=${packageName};end`;
+
+    try {
+      await Linking.openURL(url);
+    } catch {
+      // Segundo intento con formato directo
+      try {
+        await Linking.openURL(`android-app://${packageName}`);
+      } catch {
+        Alert.alert(
+          '🎮 Error',
+          `No se pudo abrir NutriQuest AR.\nPackage: ${packageName}`,
+          [{ text: 'OK' }]
+        );
+      }
+    }
+  };
 
   const nextLevelDecisions = [10, 25, 50, 100][(progress?.currentLevel ?? 1) - 1] ?? 100;
   const progressPct = progress
@@ -140,15 +163,15 @@ export const HomeScreen = () => {
           {/* ── ACCESOS RÁPIDOS ── */}
           <Text style={[s.sectionLabel, { color: textSecondary }]}>Explorar</Text>
           <View style={s.quickGrid}>
-            {[
-              { icon: '🎮', label: 'Juego', tab: 'Sugerencia' as const },
-              { icon: '📊', label: 'Historial', tab: 'Historial' as const },
-              { icon: '👤', label: 'Perfil', tab: 'Perfil' as const },
-            ].map((item) => (
+            {([
+              { icon: '🎮', label: 'Juego AR', tab: undefined, onPress: handleOpenGame },
+              { icon: '📊', label: 'Historial', tab: 'Historial', onPress: undefined },
+              { icon: '👤', label: 'Perfil', tab: 'Perfil', onPress: undefined },
+            ] as QuickItem[]).map((item) => (
               <TouchableOpacity
                 key={item.label}
                 style={[s.quickCard, { backgroundColor: cardBg }]}
-                onPress={() => navigation.navigate(item.tab)}
+                onPress={() => item.onPress ? item.onPress() : navigation.navigate(item.tab!)}
                 activeOpacity={0.8}
               >
                 <Text style={s.quickIcon}>{item.icon}</Text>
@@ -175,7 +198,11 @@ export const HomeScreen = () => {
 
           {/* ── REALIDAD AUMENTADA ── */}
           <View style={[s.raCard, { backgroundColor: cardBg }]}>
-            <TouchableOpacity style={[s.raMain, { backgroundColor: greenLight }]} activeOpacity={0.85}>
+            <TouchableOpacity
+              style={[s.raMain, { backgroundColor: greenLight }]}
+              onPress={handleOpenGame}
+              activeOpacity={0.85}
+            >
               <View>
                 <Text style={[s.raTag, { color: green }]}>✨ Experiencia inmersiva</Text>
                 <Text style={[s.raTitle, { color: greenDark }]}>Realidad Aumentada</Text>
@@ -183,15 +210,14 @@ export const HomeScreen = () => {
               </View>
               <Text style={s.raEmoji}>🥤</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={s.raSecond} activeOpacity={0.85}>
-              <Text style={[s.raSecondText, { color: textSecondary }]}>Experiencia sin RA</Text>
+            <TouchableOpacity
+              style={s.raSecond}
+              onPress={handleOpenGame}
+              activeOpacity={0.85}
+            >
+              <Text style={[s.raSecondText, { color: textSecondary }]}>Experiencia con RA</Text>
             </TouchableOpacity>
           </View>
-
-          {/* Aviso legal */}
-          <Text style={[s.legalText, { color: textSecondary }]}>
-            ⚠️ Contenido educativo · No reemplaza consulta profesional
-          </Text>
 
         </ScrollView>
       </SafeAreaView>

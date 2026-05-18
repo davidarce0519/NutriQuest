@@ -26,6 +26,12 @@ export default {
       package: 'com.nutriquest.app',
       edgeToEdgeEnabled: true,
       useNextNotificationsApi: true,
+      intentFilters: [],
+      queries: [
+        {
+          package: 'com.unity.template.ar_mobile',
+        },
+      ],
     },
     plugins: [
       'expo-secure-store',
