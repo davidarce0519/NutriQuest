@@ -37,8 +37,16 @@ const getRecentFoodIds = async (userId: string): Promise<string[]> => {
     .select('food_id')
     .eq('user_id', userId)
     .order('suggested_at', { ascending: false })
-    .limit(15); // más amplio para evitar repetición
+    .limit(20);
   return (data ?? []).map((d: any) => d.food_id);
+};
+
+const getDislikedFoodIds = async (userId: string): Promise<string[]> => {
+  return suggestionRepository.getDislikedFoodIds(userId);
+};
+
+const getFeedbackWeights = async (userId: string): Promise<Map<string, number>> => {
+  return suggestionRepository.getFeedbackWeights(userId);
 };
 
 // Mezcla aleatoria tipo Fisher-Yates
@@ -51,7 +59,7 @@ const shuffle = <T>(arr: T[]): T[] => {
   return a;
 };
 
-// Genera N sugerencias distintas de una sola vez
+// Genera N sugerencias distintas priorizando alimentos no vistos recientemente
 export const generateMultipleSuggestionsUseCase = async (
   userId: string,
   healthProfile: HealthProfile,
@@ -64,44 +72,57 @@ export const generateMultipleSuggestionsUseCase = async (
     getRecentFoodIds(userId),
   ]);
 
-  // Traer todos los alimentos compatibles
-  let foods = await foodRepository.getForUser(
-    healthProfile.nutritionalGoal,
-    healthProfile.dietType
-  );
-  if (foods.length === 0) foods = await foodRepository.getAll();
+  // Pool completo sin filtro duro
+  const allFoods = await foodRepository.getAll();
 
-  // Filtrar excluidos
-  let filtered = foods.filter(food => {
+  // Filtrar ingredientes excluidos por alergias/intolerancias/restricciones
+  const filtered = allFoods.filter(food => {
+    if (exclusions.length === 0) return true;
     const haystack = `${food.name} ${food.ingredientsSummary ?? ''}`.toLowerCase();
     return !exclusions.some(ex => haystack.includes(ex));
   });
-  if (filtered.length === 0) filtered = foods;
 
-  // Excluir recientes
-  let candidates = filtered.filter(f => !recentIds.includes(f.id));
+  // PASO 4.5 — Aprendizaje adaptativo (silencioso)
+  const [dislikedIds, feedbackWeights] = await Promise.all([
+    getDislikedFoodIds(userId).catch(() => [] as string[]),
+    getFeedbackWeights(userId).catch(() => new Map<string, number>()),
+  ]);
 
-  // Si quedan menos candidatos que los necesitados, relajar el filtro de recientes
-  if (candidates.length < count) candidates = filtered;
+  // Excluir alimentos frecuentemente descartados
+  let adaptive = filtered.filter(food => !dislikedIds.includes(food.id));
+  if (adaptive.length < count) adaptive = filtered;
 
-  // En parciales priorizar rápidos
+  // Expandir pool según pesos de feedback para sesgar el shuffle
+  const weighted: typeof adaptive = [];
+  for (const food of adaptive) {
+    const weight = feedbackWeights.get(food.id) ?? 1.0;
+    if (weight >= 3.0) {
+      weighted.push(food, food, food);
+    } else if (weight <= 0.1) {
+      if (adaptive.length <= count * 2) weighted.push(food);
+    } else {
+      weighted.push(food);
+    }
+  }
+
+  const poolToUse = weighted.length >= count ? weighted : adaptive;
+
+  const deduped = shuffle(poolToUse).filter(
+    (food, index, self) => index === self.findIndex(f => f.id === food.id)
+  );
+
+  // Priorizar alimentos no vistos recientemente; en parciales priorizar rápidos
+  const nuevos    = deduped.filter(f => !recentIds.includes(f.id));
+  const recientes = deduped.filter(f =>  recentIds.includes(f.id));
+  let candidatePool = [...nuevos, ...recientes];
   if (isExamPeriod) {
-    const quick = candidates.filter(f => f.isQuick);
-    if (quick.length >= count) candidates = quick;
+    const quick = candidatePool.filter(f => f.isQuick);
+    if (quick.length >= count) candidatePool = quick;
   }
 
-  // Mezclar y tomar los primeros N — garantiza variedad sin repetir
-  const selected = shuffle(candidates).slice(0, count);
+  const selected = candidatePool.slice(0, count);
 
-  // Si no alcanza, rellenar con más del pool general
-  if (selected.length < count) {
-    const extra = shuffle(filtered)
-      .filter(f => !selected.find(s => s.id === f.id))
-      .slice(0, count - selected.length);
-    selected.push(...extra);
-  }
-
-  // Crear las sugerencias en secuencia para que el historial se actualice
+  // Crear sugerencias en secuencia para que el historial se actualice entre cada una
   const results = [];
   for (const food of selected) {
     const s = await suggestionRepository.create(
@@ -148,4 +169,16 @@ export const getSuggestionHistoryUseCase = async (
   userId: string, limit?: number
 ) => {
   return suggestionRepository.getHistory(userId, limit);
+};
+
+export const getWeeklySummaryUseCase = async (userId: string) => {
+  return suggestionRepository.getWeeklySummary(userId);
+};
+
+export const getTopAcceptedFoodsUseCase = async (userId: string) => {
+  return suggestionRepository.getTopAcceptedFoods(userId);
+};
+
+export const getUserRestrictionsUseCase = async (userId: string): Promise<string[]> => {
+  return foodRepository.getUserRestrictionValues(userId);
 };

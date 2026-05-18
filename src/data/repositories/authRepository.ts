@@ -1,5 +1,6 @@
 import { supabase } from '../supabase/supabaseClient';
 import { User } from '../../domain/models';
+import { ENV } from '../../infrastructure/config/env';
 
 const mapProfile = (data: any): User => ({
   id: data.id,
@@ -15,9 +16,10 @@ const mapProfile = (data: any): User => ({
 });
 
 // Esperar a que el trigger cree el perfil — reintenta hasta 5 veces
+// El primer intento es inmediato; entre reintentos se espera 400ms
 const getProfileWithRetry = async (userId: string, attempts = 5): Promise<User> => {
   for (let i = 0; i < attempts; i++) {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
@@ -25,10 +27,11 @@ const getProfileWithRetry = async (userId: string, attempts = 5): Promise<User> 
 
     if (data) return mapProfile(data);
 
-    // Esperar 800ms antes del siguiente intento
-    await new Promise(res => setTimeout(res, 800));
+    if (i < attempts - 1) {
+      await new Promise(res => setTimeout(res, 400));
+    }
   }
-  throw new Error('No se pudo obtener el perfil. Intenta iniciar sesión.');
+  throw new Error('No se pudo obtener el perfil. Intenta iniciar sesión de nuevo.');
 };
 
 export const authRepository = {
@@ -72,6 +75,47 @@ export const authRepository = {
       })
       .eq('id', userId);
     if (error) throw error;
+  },
+
+  async deleteUserData(userId: string): Promise<void> {
+    const tables = [
+      'suggestions',
+      'food_preferences',
+      'health_measurements',
+      'avatar_level_history',
+      'avatar_progress',
+      'health_profiles',
+      'notification_settings',
+      'scheduled_notifications',
+      'weekly_summaries',
+    ];
+    for (const table of tables) {
+      const { error } = await supabase.from(table).delete().eq('user_id', userId);
+      if (error) throw new Error(`Error al eliminar ${table}: ${error.message}`);
+    }
+  },
+
+  async deleteAccount(): Promise<void> {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error('No hay sesión activa');
+
+    const response = await fetch(
+      `${ENV.SUPABASE_FUNCTIONS_URL}/delete-account`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error((body as { error?: string }).error ?? 'Error al eliminar la cuenta');
+    }
+
+    await supabase.auth.signOut();
   },
 
   onAuthStateChange(callback: (event: string, session: any) => void) {

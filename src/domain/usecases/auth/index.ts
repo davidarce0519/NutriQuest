@@ -31,3 +31,12 @@ export const getProfileUseCase = async (userId: string) => {
 export const acceptDataConsentUseCase = async (userId: string) => {
   return authRepository.updateDataConsent(userId, true);
 };
+
+export const deleteUserDataUseCase = async (userId: string): Promise<void> => {
+  if (!userId) throw new Error('Usuario requerido');
+  return authRepository.deleteUserData(userId);
+};
+
+export const deleteAccountUseCase = async (): Promise<void> => {
+  await authRepository.deleteAccount();
+};

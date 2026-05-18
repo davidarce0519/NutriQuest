@@ -48,4 +48,46 @@ export const avatarRepository = {
     if (error) throw error;
     return data;
   },
+
+  // Requiere migración en Supabase:
+  // ALTER TABLE avatar_level_history ADD COLUMN IF NOT EXISTS seen BOOLEAN DEFAULT false;
+  // UPDATE avatar_level_history SET seen = true;
+  async getUnseenLevelUps(userId: string): Promise<{ id: string; level: number; achievedAt: string }[]> {
+    const { data, error } = await supabase
+      .from('avatar_level_history')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('seen', false)
+      .order('achieved_at', { ascending: false });
+
+    if (error) {
+      // Columna seen no existe aún — mostrar entradas de últimas 24h como fallback
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const fallback = await supabase
+        .from('avatar_level_history')
+        .select('*')
+        .eq('user_id', userId)
+        .gte('achieved_at', yesterday)
+        .order('achieved_at', { ascending: false });
+      return (fallback.data ?? []).map((d: any) => ({
+        id:          d.id,
+        level:       d.level ?? d.new_level ?? 1,
+        achievedAt:  d.achieved_at,
+      }));
+    }
+
+    return (data ?? []).map((d: any) => ({
+      id:          d.id,
+      level:       d.level ?? d.new_level ?? 1,
+      achievedAt:  d.achieved_at,
+    }));
+  },
+
+  async markLevelUpSeen(levelHistoryId: string): Promise<void> {
+    const { error } = await supabase
+      .from('avatar_level_history')
+      .update({ seen: true })
+      .eq('id', levelHistoryId);
+    if (error) throw error;
+  },
 };

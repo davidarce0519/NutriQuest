@@ -1,22 +1,14 @@
 import 'react-native-gesture-handler';
 import React, { useEffect } from 'react';
-import { useColorScheme } from 'react-native'; // Importamos el hook nativo
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { NavigationContainer, DarkTheme, DefaultTheme } from '@react-navigation/native'; // Importamos temas de navegación
-import { AppNavigator } from './src/presentation/navigation/AppNavigator';
-import { useAuthStore } from './src/infrastructure/stores/authStore';
-import { authRepository } from './src/data/repositories/authRepository';
-
-// --- IMPORT CORRECTO SEGÚN TU ESTRUCTURA ---
-import { ThemeProvider } from './src/infrastructure/theme/ThemeContext';
-
-const queryClient = new QueryClient();
+import { AppNavigator }         from './src/presentation/navigation/AppNavigator';
+import { useAuthStore }         from './src/infrastructure/stores/authStore';
+import { useNotificationStore } from './src/infrastructure/stores/notificationStore';
+import { authRepository }       from './src/data/repositories/authRepository';
+import { getNotificationSettingsUseCase } from './src/domain/usecases/notifications';
 
 export default function App() {
-  const { setUser, setHydrated } = useAuthStore();
-  
-  // 1. Detectamos el esquema de colores del sistema
-  const colorScheme = useColorScheme();
+  const { setUser, setHydrated }  = useAuthStore();
+  const { setSettings, clear: clearSettings } = useNotificationStore();
 
   useEffect(() => {
     const { data: { subscription } } = authRepository.onAuthStateChange(
@@ -25,29 +17,25 @@ export default function App() {
           try {
             const profile = await authRepository.getProfile(session.user.id);
             setUser(profile);
+            // Cargar settings de notificaciones junto con el perfil
+            try {
+              const settings = await getNotificationSettingsUseCase(session.user.id);
+              setSettings(settings);
+            } catch {
+              // no crítico — ThemeContext y ProfileScreen usan defaults
+            }
           } catch {
             setUser(null);
           }
         } else {
           setUser(null);
+          clearSettings();
         }
         setHydrated(true);
-      }
+      },
     );
     return () => subscription.unsubscribe();
   }, []);
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      {/* 
-          Pasamos el colorScheme al ThemeProvider si tu contexto lo requiere, 
-          pero lo más importante es que el NavigationContainer reciba el tema.
-      */}
-      <ThemeProvider>
-        <NavigationContainer theme={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <AppNavigator />
-        </NavigationContainer>
-      </ThemeProvider>
-    </QueryClientProvider>
-  );
+  return <AppNavigator />;
 }

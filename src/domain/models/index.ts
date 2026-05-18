@@ -126,6 +126,21 @@ export interface AvatarProgress {
   updatedAt:             string;
 }
 
+// ─── Notification Settings ────────────────────────────────────
+export interface NotificationSettings {
+  userId:                    string;
+  darkModeAuto:              boolean;
+  darkModeManual:            boolean;
+  darkModeStartHour:         number;
+  darkModeEndHour:           number;
+  notificationsEnabled:      boolean;
+  notificationsPaused:       boolean;
+  notificationsPausedUntil?: string;
+  pushToken?:                string;
+  expoNotificationId?:       string;
+  notificationHour:          number;
+}
+
 // ─── Weekly Summary ───────────────────────────────────────────
 export interface WeeklySummary {
   id:                   string;

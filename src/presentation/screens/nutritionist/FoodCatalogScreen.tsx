@@ -6,11 +6,10 @@ import {
 import { foodRepository } from '../../../data/repositories/foodRepository';
 import { Food } from '../../../domain/models';
 import { BorderRadius, Spacing } from '../../../infrastructure/theme';
+import { useTheme } from '../../../infrastructure/theme/ThemeContext';
 
 const GREEN      = '#1a6b0a';
 const GREEN_DARK = '#042901';
-const CARD_BG    = '#f2f2ed';
-const BG_PAGE    = '#d9d6cc';
 
 const DEMO_FOODS = [
   { id: '1',  name: 'Fresas',      imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRsch2cerK6ZAai_el3L0Iii-uh3q9oEx870A&s' },
@@ -28,6 +27,13 @@ const DEMO_FOODS = [
 ];
 
 export const FoodCatalogScreen = () => {
+  const { isDark } = useTheme();
+  const bg         = isDark ? '#0f172a' : '#d9d6cc';
+  const cardBg     = isDark ? '#1e293b' : '#f2f2ed';
+  const textPrimary = isDark ? '#f1f5f9' : GREEN_DARK;
+  const green      = isDark ? '#22c55e' : GREEN;
+  const greenDark  = isDark ? '#16a34a' : GREEN_DARK;
+
   const [foods, setFoods]     = useState<Food[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,8 +44,8 @@ export const FoodCatalogScreen = () => {
   const display = foods.length > 0 ? foods : DEMO_FOODS;
 
   return (
-    <View style={s.page}>
-      <View style={s.header}>
+    <View style={[s.page, { backgroundColor: bg }]}>
+      <View style={[s.header, { backgroundColor: green }]}>
         <TouchableOpacity style={s.iconBtn}>
           <Text style={s.iconBtnText}>☰</Text>
         </TouchableOpacity>
@@ -50,27 +56,37 @@ export const FoodCatalogScreen = () => {
       </View>
 
       {loading ? (
-        <ActivityIndicator color="white" style={{ marginTop: 40 }} />
+        <ActivityIndicator color={green} style={{ marginTop: 40 }} />
       ) : (
-        <ScrollView contentContainerStyle={s.scroll}>
-          <View style={s.card}>
+        <ScrollView contentContainerStyle={[s.scroll]}>
+          <View style={[s.card, { backgroundColor: cardBg }]}>
             <View style={s.sectionRow}>
               <View style={s.sectionLeft}>
                 <Text style={s.sectionIcon}>🍴</Text>
-                <Text style={s.sectionTitle}>Alimentos</Text>
+                <Text style={[s.sectionTitle, { color: textPrimary }]}>Alimentos</Text>
               </View>
             </View>
 
             <TouchableOpacity style={s.banner}>
-              <Image source={{ uri: 'https://images.unsplash.com/photo-1490818387583-1baba5e638af?q=80&w=1000' }} style={s.bannerImg} resizeMode="cover" />
-              <Text style={s.bannerText}>Todos los alimentos</Text>
+              <Image
+                source={{ uri: 'https://images.unsplash.com/photo-1490818387583-1baba5e638af?q=80&w=1000' }}
+                style={s.bannerImg}
+                resizeMode="cover"
+              />
+              <Text style={[s.bannerText, { color: textPrimary, backgroundColor: isDark ? '#1e293b' : '#ffffff' }]}>
+                Todos los alimentos
+              </Text>
             </TouchableOpacity>
 
             <View style={s.grid}>
               {display.map((f) => (
-                <TouchableOpacity key={f.id} style={s.foodCard} activeOpacity={0.85}>
-                  <Image source={{ uri: f.imageUrl ?? 'https://via.placeholder.com/100' }} style={s.foodImg} resizeMode="cover" />
-                  <View style={s.foodLabel}>
+                <TouchableOpacity key={f.id} style={[s.foodCard, { backgroundColor: isDark ? '#334155' : '#ffffff' }]} activeOpacity={0.85}>
+                  <Image
+                    source={{ uri: f.imageUrl ?? 'https://via.placeholder.com/100' }}
+                    style={s.foodImg}
+                    resizeMode="cover"
+                  />
+                  <View style={[s.foodLabel, { backgroundColor: greenDark }]}>
                     <Text style={s.foodLabelText} numberOfLines={2}>{f.name}</Text>
                   </View>
                 </TouchableOpacity>
@@ -78,8 +94,8 @@ export const FoodCatalogScreen = () => {
             </View>
 
             <TouchableOpacity style={s.moreBtn}>
-              <Text style={s.moreBtnArrow}>▼</Text>
-              <Text style={s.moreBtnText}>MÁS ALIMENTOS</Text>
+              <Text style={[s.moreBtnArrow, { color: textPrimary }]}>▼</Text>
+              <Text style={[s.moreBtnText, { color: textPrimary }]}>MÁS ALIMENTOS</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -89,9 +105,8 @@ export const FoodCatalogScreen = () => {
 };
 
 const s = StyleSheet.create({
-  page:   { flex: 1, backgroundColor: BG_PAGE },
+  page:   { flex: 1 },
   header: {
-    backgroundColor: GREEN,
     height:          100,
     borderBottomLeftRadius: 45,
     borderBottomRightRadius: 45,
@@ -113,31 +128,33 @@ const s = StyleSheet.create({
   headerTitle:  { color: 'white', fontSize: 28, fontWeight: '900' },
   scroll:       { paddingHorizontal: Spacing.base, paddingBottom: 40 },
   card: {
-    backgroundColor: CARD_BG,
     borderRadius: 45,
     padding: 22,
     gap: 18,
     elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
   },
   sectionRow:   { flexDirection: 'row', alignItems: 'center' },
   sectionLeft:  { flexDirection: 'row', alignItems: 'center', gap: 12 },
   sectionIcon:  { fontSize: 28 },
-  sectionTitle: { fontSize: 28, fontWeight: '900', color: GREEN_DARK },
+  sectionTitle: { fontSize: 28, fontWeight: '900' },
   banner:       { borderRadius: 25, overflow: 'hidden', elevation: 4 },
   bannerImg:    { width: '100%', height: 90 },
-  bannerText:   { padding: 12, fontSize: 22, fontWeight: '900', color: GREEN_DARK, backgroundColor: 'white' },
+  bannerText:   { padding: 12, fontSize: 22, fontWeight: '900' },
   grid:         { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   foodCard: {
     width:        '31%',
     borderRadius: 15,
     overflow:     'hidden',
-    backgroundColor: 'white',
     elevation:    4,
   },
-  foodImg:      { width: '100%', height: 75 },
-  foodLabel:    { backgroundColor: GREEN_DARK, minHeight: 32, alignItems: 'center', justifyContent: 'center', padding: 4 },
-  foodLabelText:{ color: 'white', fontSize: 10, fontWeight: '700', textAlign: 'center' },
+  foodImg:       { width: '100%', height: 75 },
+  foodLabel:     { minHeight: 32, alignItems: 'center', justifyContent: 'center', padding: 4 },
+  foodLabelText: { color: 'white', fontSize: 10, fontWeight: '700', textAlign: 'center' },
   moreBtn:      { alignItems: 'center', marginTop: 10, gap: 2 },
-  moreBtnArrow: { fontSize: 38, color: GREEN_DARK, fontWeight: '900' },
-  moreBtnText:  { fontSize: 11, fontWeight: '900', color: GREEN_DARK, letterSpacing: 2 },
+  moreBtnArrow: { fontSize: 38, fontWeight: '900' },
+  moreBtnText:  { fontSize: 11, fontWeight: '900', letterSpacing: 2 },
 });

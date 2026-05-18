@@ -1,28 +1,38 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useNotificationStore } from '../stores/notificationStore';
+import { isDarkModeActiveUseCase } from '../../domain/usecases/notifications';
 
 interface ThemeContextType {
   isDark: boolean;
-  toggleTheme: () => void;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const ThemeContext = createContext<ThemeContextType>({ isDark: false });
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
+  const settings = useNotificationStore((s) => s.settings);
   const [isDark, setIsDark] = useState(false);
 
-  const toggleTheme = () => setIsDark((prev) => !prev);
+  useEffect(() => {
+    const evaluate = () => {
+      if (!settings) {
+        setIsDark(false);
+        return;
+      }
+      setIsDark(isDarkModeActiveUseCase(settings));
+    };
+
+    evaluate();
+
+    // Re-evaluar cada minuto para el cambio automático por hora
+    const timer = setInterval(evaluate, 60_000);
+    return () => clearInterval(timer);
+  }, [settings]);
 
   return (
-    <ThemeContext.Provider value={{ isDark, toggleTheme }}>
+    <ThemeContext.Provider value={{ isDark }}>
       {children}
     </ThemeContext.Provider>
   );
 };
 
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme debe usarse dentro de un ThemeProvider');
-  }
-  return context;
-};
+export const useTheme = () => useContext(ThemeContext);

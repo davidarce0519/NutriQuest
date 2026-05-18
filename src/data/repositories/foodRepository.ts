@@ -45,23 +45,37 @@ export const foodRepository = {
     return mapFood(data);
   },
 
-  // Filtrar por objetivo y tipo de dieta (personalización)
+  // Sistema de puntuación en lugar de filtro duro: retorna TODOS los alimentos activos ordenados por relevancia
   async getForUser(goal?: string, dietType?: string): Promise<Food[]> {
-    let query = supabase
+    const { data, error } = await supabase
       .from('foods')
       .select('*')
       .eq('is_active', true);
-
-    if (goal) {
-      query = query.contains('best_for_goal', [goal]);
-    }
-    if (dietType && dietType !== 'omnivora') {
-      query = query.contains('suitable_diet_types', [dietType]);
-    }
-
-    const { data, error } = await query.order('energy_level', { ascending: false });
     if (error) throw error;
-    return data.map(mapFood);
+
+    const foods = data.map(mapFood);
+    const hour = new Date().getHours();
+    const isStudyTime = hour >= 12 && hour < 18;
+
+    type Scored = { food: Food; score: number };
+    const scored: Scored[] = foods.map(food => ({
+      food,
+      score: (goal && food.bestForGoal?.includes(goal) ? 3 : 0)
+           + (dietType && dietType !== 'omnivora' && food.suitableDietTypes?.includes(dietType) ? 2 : 0)
+           + (food.isQuick && isStudyTime ? 1 : 0),
+    }));
+    scored.sort((a, b) => b.score - a.score);
+    return scored.map(s => s.food);
+  },
+
+  async getUserRestrictionValues(userId: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from('food_preferences')
+      .select('value')
+      .eq('user_id', userId)
+      .in('category', ['alergia', 'restriccion', 'intolerancia']);
+    if (error) throw error;
+    return (data ?? []).map((d: any) => d.value as string);
   },
 
   async upsert(food: Partial<Food>, validatorId: string, validatorName: string): Promise<Food> {

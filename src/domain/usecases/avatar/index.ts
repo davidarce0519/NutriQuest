@@ -11,3 +11,11 @@ export const getAvatarLevelsUseCase = async () => {
 export const getLevelHistoryUseCase = async (userId: string) => {
   return avatarRepository.getLevelHistory(userId);
 };
+
+export const getUnseenLevelUpsUseCase = async (userId: string) => {
+  return avatarRepository.getUnseenLevelUps(userId);
+};
+
+export const markLevelUpSeenUseCase = async (levelHistoryId: string) => {
+  return avatarRepository.markLevelUpSeen(levelHistoryId);
+};

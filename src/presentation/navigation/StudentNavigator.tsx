@@ -1,13 +1,22 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { HomeScreen }       from '../screens/student/HomeScreen';
-import { SuggestionScreen } from '../screens/student/SuggestionScreen';
-import { ProgressScreen }   from '../screens/student/ProgressScreen';
-import { HistoryScreen }    from '../screens/student/HistoryScreen';
-import { ProfileScreen }    from '../screens/student/ProfileScreen';
+import { useTheme } from '../../infrastructure/theme/ThemeContext';
+import { Food } from '../../domain/models';
+import { HomeScreen }         from '../screens/student/HomeScreen';
+import { SuggestionScreen }   from '../screens/student/SuggestionScreen';
+import { ProgressScreen }     from '../screens/student/ProgressScreen';
+import { HistoryScreen }      from '../screens/student/HistoryScreen';
+import { ProfileScreen }      from '../screens/student/ProfileScreen';
+import { FoodDetailScreen }   from '../screens/student/FoodDetailScreen';
+
+export type StudentStackParams = {
+  StudentTabs:     undefined;
+  DetalleAlimento: { food: Food; suggestionId?: string };
+};
 
 export type StudentTabParams = {
   Inicio:     undefined;
@@ -17,7 +26,8 @@ export type StudentTabParams = {
   Perfil:     undefined;
 };
 
-const Tab = createBottomTabNavigator<StudentTabParams>();
+const Stack = createNativeStackNavigator<StudentStackParams>();
+const Tab   = createBottomTabNavigator<StudentTabParams>();
 
 const TABS = [
   { name: 'Inicio',     icon: '🏠', label: 'Inicio' },
@@ -27,19 +37,28 @@ const TABS = [
   { name: 'Perfil',     icon: '👤', label: 'Perfil' },
 ];
 
-const GREEN      = '#1a6b0a';
-const GREEN_DARK = '#042901';
-const BG         = '#f5f5f0';
-
 const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
   const insets = useSafeAreaInsets();
+  const { isDark } = useTheme();
+
+  const bg        = isDark ? '#0f172a' : '#f5f5f0';
+  const cardBg    = isDark ? '#1e293b' : '#ffffff';
+  const border    = isDark ? '#334155' : '#e2e8f0';
+  const green     = isDark ? '#22c55e' : '#1a6b0a';
+  const greenDark = isDark ? '#16a34a' : '#042901';
+  const greenLight= isDark ? '#4ade80' : '#c1d9b7';
+  const textMuted = isDark ? '#475569' : '#94a3b8';
 
   return (
     <View style={[
       s.wrapper,
-      { paddingBottom: Math.max(insets.bottom, 8) }
+      {
+        backgroundColor: bg,
+        borderTopColor:  border,
+        paddingBottom:   Math.max(insets.bottom, 8),
+      },
     ]}>
-      <View style={s.bar}>
+      <View style={[s.bar, { backgroundColor: cardBg }]}>
         {state.routes.map((route, index) => {
           const isFocused = state.index === index;
           const tab = TABS.find(t => t.name === route.name)!;
@@ -62,13 +81,23 @@ const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
               style={s.tabBtn}
               activeOpacity={0.7}
             >
-              <View style={[s.indicator, isFocused && s.indicatorActive]} />
-              <View style={[s.iconWrap, isFocused && s.iconWrapActive]}>
+              <View style={[
+                s.indicator,
+                isFocused && { backgroundColor: green },
+              ]} />
+              <View style={[
+                s.iconWrap,
+                isFocused && { backgroundColor: isDark ? green + '33' : green + '18' },
+              ]}>
                 <Text style={{ fontSize: isFocused ? 22 : 20 }}>
                   {tab.icon}
                 </Text>
               </View>
-              <Text style={[s.label, isFocused && s.labelActive]}>
+              <Text style={[
+                s.label,
+                { color: textMuted },
+                isFocused && { color: isDark ? greenLight : greenDark, fontWeight: '800' },
+              ]}>
                 {tab.label}
               </Text>
             </TouchableOpacity>
@@ -79,7 +108,7 @@ const CustomTabBar = ({ state, navigation }: BottomTabBarProps) => {
   );
 };
 
-export const StudentNavigator = () => (
+const StudentTabs = () => (
   <Tab.Navigator
     tabBar={(props) => <CustomTabBar {...props} />}
     screenOptions={{ headerShown: false }}
@@ -92,17 +121,21 @@ export const StudentNavigator = () => (
   </Tab.Navigator>
 );
 
+export const StudentNavigator = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+    <Stack.Screen name="StudentTabs"     component={StudentTabs} />
+    <Stack.Screen name="DetalleAlimento" component={FoodDetailScreen} />
+  </Stack.Navigator>
+);
+
 const s = StyleSheet.create({
   wrapper: {
-    backgroundColor:   BG,
     paddingHorizontal: 16,
     paddingTop:        8,
     borderTopWidth:    1,
-    borderTopColor:    '#e2e8e0',
   },
   bar: {
     flexDirection:     'row',
-    backgroundColor:   '#ffffff',
     borderRadius:      20,
     paddingVertical:   6,
     paddingHorizontal: 4,
@@ -125,7 +158,6 @@ const s = StyleSheet.create({
     backgroundColor: 'transparent',
     marginBottom:    4,
   },
-  indicatorActive:  { backgroundColor: GREEN },
   iconWrap: {
     width:           42,
     height:          42,
@@ -134,7 +166,5 @@ const s = StyleSheet.create({
     justifyContent:  'center',
     backgroundColor: 'transparent',
   },
-  iconWrapActive:   { backgroundColor: GREEN + '18' },
-  label:            { fontSize: 10, fontWeight: '600', color: '#94a3b8' },
-  labelActive:      { color: GREEN_DARK, fontWeight: '800' },
+  label: { fontSize: 10, fontWeight: '600' },
 });

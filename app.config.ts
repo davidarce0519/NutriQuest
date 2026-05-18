@@ -25,8 +25,16 @@ export default {
       },
       package: 'com.nutriquest.app',
       edgeToEdgeEnabled: true,
+      useNextNotificationsApi: true,
     },
-    plugins: ['expo-secure-store', 'expo-notifications'],
+    plugins: [
+      'expo-secure-store',
+      ['expo-notifications', {
+        icon: './assets/icon.png',
+        color: '#1a6b0a',
+        sounds: [],
+      }],
+    ],
     extra: {
       supabaseUrl: process.env.SUPABASE_URL,
       supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
