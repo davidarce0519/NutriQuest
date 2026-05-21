@@ -9,9 +9,14 @@ import {
   TouchableOpacity,
   Animated,
   Easing,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { useAuthStore } from '../../../infrastructure/stores/authStore';
+import { OnboardingTooltip } from '../../components/OnboardingTooltip';
+import { useWalkthroughStore } from '../../../infrastructure/stores/walkthroughStore';
+import { WALKTHROUGH_STEPS, useWalkthrough } from '../../hooks/useWalkthrough';
 import {
   getProgressUseCase,
   getAvatarLevelsUseCase,
@@ -21,6 +26,8 @@ import {
 import { AvatarProgress, AvatarLevel } from '../../../domain/models';
 import { BorderRadius } from '../../../infrastructure/theme';
 import { useTheme } from '../../../infrastructure/theme/ThemeContext';
+import { useHealthStore } from '../../../infrastructure/stores/healthStore';
+import { StudentAvatar } from '../../components/StudentAvatar';
 
 const AVATAR_EMOJIS = ['', '🌱', '🌿', '🌳', '🌲', '🏔️'];
 
@@ -32,36 +39,47 @@ const LEVEL_MESSAGES: Record<number, string> = {
 };
 
 export const ProgressScreen = () => {
+  const navigation = useNavigation();
   const { isDark } = useTheme();
-  const bg            = isDark ? '#0f172a' : '#f5f5f0';
-  const cardBg        = isDark ? '#1e293b' : '#ffffff';
-  const border        = isDark ? '#334155' : '#e2e8f0';
-  const textPrimary   = isDark ? '#f1f5f9' : '#334155';
+  const bg = isDark ? '#0f172a' : '#f5f5f0';
+  const cardBg = isDark ? '#1e293b' : '#ffffff';
+  const border = isDark ? '#334155' : '#e2e8f0';
+  const textPrimary = isDark ? '#f1f5f9' : '#334155';
   const textSecondary = isDark ? '#94a3b8' : '#64748b';
-  const textMuted     = isDark ? '#475569' : '#94a3b8';
-  const green         = isDark ? '#22c55e' : '#1a6b0a';
-  const greenDark     = isDark ? '#16a34a' : '#042901';
-  const greenLight    = isDark ? '#4ade80' : '#c1d9b7';
+  const textMuted = isDark ? '#475569' : '#94a3b8';
+  const green = isDark ? '#22c55e' : '#1a6b0a';
+  const greenDark = isDark ? '#16a34a' : '#042901';
+  const greenLight = isDark ? '#4ade80' : '#c1d9b7';
 
   const user = useAuthStore((s) => s.user);
-  const [progress, setProgress]             = useState<AvatarProgress | null>(null);
-  const [levels, setLevels]                 = useState<AvatarLevel[]>([]);
-  const [loading, setLoading]               = useState(true);
+  const profile = useHealthStore((s) => s.profile);
+
+  const avatarCardRef = useRef<View>(null);
+  const statsRowRef = useRef<View>(null);
+  const scrollRef = useRef<ScrollView>(null);
+
+  const { active, stepIndex, measure, setMeasure } = useWalkthroughStore();
+  const { skipWalkthrough, nextStep } = useWalkthrough();
+  const currentStep = WALKTHROUGH_STEPS[stepIndex];
+
+  const [progress, setProgress] = useState<AvatarProgress | null>(null);
+  const [levels, setLevels] = useState<AvatarLevel[]>([]);
+  const [loading, setLoading] = useState(true);
   const [displayDecisions, setDisplayDecisions] = useState(0);
-  const [levelUpModal, setLevelUpModal]     = useState(false);
-  const [unseenLevelUp, setUnseenLevelUp]   = useState<{ id: string; level: number } | null>(null);
+  const [levelUpModal, setLevelUpModal] = useState(false);
+  const [unseenLevelUp, setUnseenLevelUp] = useState<{ id: string; level: number } | null>(null);
 
   // ── Animated.Values ───────────────────────────────────
-  const avatarScaleAnim     = useRef(new Animated.Value(0.5)).current;
-  const avatarRotAnim       = useRef(new Animated.Value(-5)).current;
-  const progressWidthAnim   = useRef(new Animated.Value(0)).current;  // 0–100
+  const avatarScaleAnim = useRef(new Animated.Value(0.5)).current;
+  const avatarRotAnim = useRef(new Animated.Value(-5)).current;
+  const progressWidthAnim = useRef(new Animated.Value(0)).current;  // 0–100
 
-  const modalCardYAnim      = useRef(new Animated.Value(80)).current;
-  const modalCardOpAnim     = useRef(new Animated.Value(0)).current;
+  const modalCardYAnim = useRef(new Animated.Value(80)).current;
+  const modalCardOpAnim = useRef(new Animated.Value(0)).current;
   const modalEmojiScaleAnim = useRef(new Animated.Value(0)).current;
-  const modalBadgeOpAnim    = useRef(new Animated.Value(0)).current;
-  const modalMsgOpAnim      = useRef(new Animated.Value(0)).current;
-  const modalBtnOpAnim      = useRef(new Animated.Value(0)).current;
+  const modalBadgeOpAnim = useRef(new Animated.Value(0)).current;
+  const modalMsgOpAnim = useRef(new Animated.Value(0)).current;
+  const modalBtnOpAnim = useRef(new Animated.Value(0)).current;
 
   // Ref para detener el loop del emoji sin perder referencia al stop
   const emojiPulseRef = useRef<Animated.CompositeAnimation | null>(null);
@@ -95,13 +113,13 @@ export const ProgressScreen = () => {
 
         // Barra de progreso (useNativeDriver: false — width no soporta native)
         const currentLv = l.find(lv => lv.level === p.currentLevel);
-        const nextLv    = l.find(lv => lv.level === p.currentLevel + 1);
+        const nextLv = l.find(lv => lv.level === p.currentLevel + 1);
         const pct = nextLv && currentLv
           ? Math.min(
-              ((p.totalHealthyDecisions - currentLv.minDecisions) /
-               (nextLv.minDecisions - currentLv.minDecisions)) * 100,
-              100,
-            )
+            ((p.totalHealthyDecisions - currentLv.minDecisions) /
+              (nextLv.minDecisions - currentLv.minDecisions)) * 100,
+            100,
+          )
           : 100;
         progressWidthAnim.setValue(0);
         Animated.timing(progressWidthAnim, {
@@ -114,7 +132,7 @@ export const ProgressScreen = () => {
         // Contador JS
         const target = p.totalHealthyDecisions;
         if (target > 0) {
-          const steps    = 24;
+          const steps = 24;
           const stepTime = 1000 / steps;
           let step = 0;
           const timer = setInterval(() => {
@@ -137,7 +155,7 @@ export const ProgressScreen = () => {
           setLevelUpModal(true);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [user]);
 
   // ── Animaciones del modal ──────────────────────────────
@@ -198,25 +216,54 @@ export const ProgressScreen = () => {
     };
   }, [levelUpModal]);
 
+  useEffect(() => {
+    if (!active || currentStep?.screen !== 'Progreso') return;
+    const refs: Record<string, React.RefObject<View | null>> = {
+      avatarCard: avatarCardRef,
+      statsRow: statsRowRef,
+    };
+    const refCurrent = refs[currentStep.refKey]?.current;
+    if (!refCurrent) return;
+    let cancelled = false;
+    const scrollMap: Record<string, number> = {
+      avatarCard: 0,
+      statsRow: 400,
+    };
+    scrollRef.current?.scrollTo({
+      y: scrollMap[currentStep.refKey] ?? 0,
+      animated: true,
+    });
+    const timer = setTimeout(() => {
+      if (cancelled) return;
+      refCurrent.measure((_x, _y, width, height, pageX, pageY) => {
+        if (!cancelled) setMeasure({ pageX, pageY, width, height });
+      });
+    }, 450);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [active, stepIndex]);
+
   const handleCloseLevelUpModal = async () => {
     if (unseenLevelUp) {
-      await markLevelUpSeenUseCase(unseenLevelUp.id).catch(() => {});
+      await markLevelUpSeenUseCase(unseenLevelUp.id).catch(() => { });
     }
     setLevelUpModal(false);
     setUnseenLevelUp(null);
   };
 
   // ── Computed ───────────────────────────────────────────
-  const currentLevel    = levels.find((l) => l.level === progress?.currentLevel);
-  const nextLevel       = levels.find((l) => l.level === (progress?.currentLevel ?? 0) + 1);
+  const currentLevel = levels.find((l) => l.level === progress?.currentLevel);
+  const nextLevel = levels.find((l) => l.level === (progress?.currentLevel ?? 0) + 1);
   const decisionsToNext = nextLevel
     ? nextLevel.minDecisions - (progress?.totalHealthyDecisions ?? 0)
     : 0;
 
   const levelUpLevel = unseenLevelUp?.level ?? 1;
   const levelUpEmoji = AVATAR_EMOJIS[levelUpLevel] ?? '🌱';
-  const levelUpName  = levels.find(l => l.level === levelUpLevel)?.label ?? `Nivel ${levelUpLevel}`;
-  const levelUpMsg   = LEVEL_MESSAGES[levelUpLevel] ?? '¡Sigue así!';
+  const levelUpName = levels.find(l => l.level === levelUpLevel)?.label ?? `Nivel ${levelUpLevel}`;
+  const levelUpMsg = LEVEL_MESSAGES[levelUpLevel] ?? '¡Sigue así!';
 
   // Interpolaciones de estilos
   const avatarRotInterp = avatarRotAnim.interpolate({
@@ -241,7 +288,7 @@ export const ProgressScreen = () => {
       <View style={[s.topStrip, { backgroundColor: green }]} />
 
       <SafeAreaView style={s.safe}>
-        <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+        <ScrollView ref={scrollRef} contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
 
           {/* Header */}
           <View style={s.header}>
@@ -250,17 +297,23 @@ export const ProgressScreen = () => {
           </View>
 
           {/* Hero avatar */}
-          <View style={[s.avatarCard, { backgroundColor: cardBg, shadowOpacity: isDark ? 0.35 : 0.1 }]}>
-            <Animated.Text
-              style={[s.avatarEmoji, {
-                transform: [
-                  { scale: avatarScaleAnim },
-                  { rotate: avatarRotInterp },
-                ],
-              }]}
-            >
+          <View ref={avatarCardRef} style={[s.avatarCard, { backgroundColor: cardBg, shadowOpacity: isDark ? 0.35 : 0.1 }]}>
+            <Animated.View style={{
+              transform: [{ scale: avatarScaleAnim }, { rotate: avatarRotInterp }],
+            }}>
+              <StudentAvatar
+                bmiCategory={profile?.bmiCategory}
+                currentLevel={progress?.currentLevel}
+                streakDays={progress?.activeStreakDays}
+                nutritionalGoal={profile?.nutritionalGoal}
+                activityLevel={profile?.physicalActivityLevel}
+                size={160}
+                animated={true}
+              />
+            </Animated.View>
+            <Text style={{ fontSize: 20 }}>
               {AVATAR_EMOJIS[progress?.currentLevel ?? 1]}
-            </Animated.Text>
+            </Text>
 
             <View style={s.avatarInfo}>
               <View style={[s.avatarBadge, { backgroundColor: green + '20' }]}>
@@ -280,7 +333,7 @@ export const ProgressScreen = () => {
             {nextLevel && (
               <View style={s.progressSection}>
                 <View style={s.progressLabelRow}>
-                  <Text style={[s.progressLabelLeft,  { color: textSecondary }]}>{currentLevel?.label}</Text>
+                  <Text style={[s.progressLabelLeft, { color: textSecondary }]}>{currentLevel?.label}</Text>
                   <Text style={[s.progressLabelRight, { color: green }]}>{nextLevel.label}</Text>
                 </View>
                 <View style={[s.progressBarBg, { backgroundColor: border }]}>
@@ -298,7 +351,7 @@ export const ProgressScreen = () => {
           </View>
 
           {/* Stats row */}
-          <View style={s.statsRow}>
+          <View ref={statsRowRef} style={s.statsRow}>
             <View style={[s.statCard, s.statCardDark, { backgroundColor: greenDark }]}>
               <Text style={s.statIconLg}>🥗</Text>
               <Text style={s.statValueLight}>{displayDecisions}</Text>
@@ -323,7 +376,7 @@ export const ProgressScreen = () => {
           {/* Niveles */}
           <Text style={[s.sectionLabel, { color: textMuted }]}>Niveles del avatar</Text>
           {levels.map((level) => {
-            const unlocked  = (progress?.totalHealthyDecisions ?? 0) >= level.minDecisions;
+            const unlocked = (progress?.totalHealthyDecisions ?? 0) >= level.minDecisions;
             const isCurrent = level.level === progress?.currentLevel;
             return (
               <View key={level.level} style={[
@@ -359,6 +412,21 @@ export const ProgressScreen = () => {
           </View>
         </ScrollView>
       </SafeAreaView>
+
+      {active && currentStep?.screen === 'Progreso' && measure !== null && (
+        <OnboardingTooltip
+          visible
+          title={currentStep.title}
+          description={currentStep.description}
+          icon={currentStep.icon}
+          position={currentStep.position}
+          targetMeasure={measure}
+          step={stepIndex + 1}
+          totalSteps={WALKTHROUGH_STEPS.length}
+          onNext={() => nextStep(navigation)}
+          onSkip={skipWalkthrough}
+        />
+      )}
 
       {/* MODAL SUBIDA DE NIVEL */}
       <Modal visible={levelUpModal} transparent animationType="fade" onRequestClose={handleCloseLevelUpModal}>
@@ -403,11 +471,11 @@ const s = StyleSheet.create({
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
   },
-  safe:   { flex: 1 },
+  safe: { flex: 1 },
   scroll: { paddingHorizontal: 18, paddingBottom: 32, gap: 14 },
 
-  header:      { paddingTop: 8, paddingBottom: 4 },
-  headerSub:   { fontSize: 12, fontWeight: '600' },
+  header: { paddingTop: 8, paddingBottom: 4 },
+  headerSub: { fontSize: 12, fontWeight: '600' },
   headerTitle: { fontSize: 28, fontWeight: '900', color: '#ffffff' },
 
   avatarCard: {
@@ -420,16 +488,16 @@ const s = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowRadius: 16,
   },
-  avatarEmoji:     { fontSize: 80 },
-  avatarInfo:      { alignItems: 'center', gap: 4 },
-  avatarBadge:     { borderRadius: BorderRadius.full, paddingHorizontal: 14, paddingVertical: 5 },
+  avatarEmoji: { fontSize: 80 },
+  avatarInfo: { alignItems: 'center', gap: 4 },
+  avatarBadge: { borderRadius: BorderRadius.full, paddingHorizontal: 14, paddingVertical: 5 },
   avatarBadgeText: { fontSize: 12, fontWeight: '700' },
-  avatarLevel:     { fontSize: 26, fontWeight: '900' },
-  avatarDesc:      { fontSize: 13, textAlign: 'center', lineHeight: 20 },
+  avatarLevel: { fontSize: 26, fontWeight: '900' },
+  avatarDesc: { fontSize: 13, textAlign: 'center', lineHeight: 20 },
 
-  progressSection:    { width: '100%', gap: 6, marginTop: 4 },
-  progressLabelRow:   { flexDirection: 'row', justifyContent: 'space-between' },
-  progressLabelLeft:  { fontSize: 11, fontWeight: '600' },
+  progressSection: { width: '100%', gap: 6, marginTop: 4 },
+  progressLabelRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  progressLabelLeft: { fontSize: 11, fontWeight: '600' },
   progressLabelRight: { fontSize: 11, fontWeight: '700' },
   progressBarBg: {
     height: 10,
@@ -437,27 +505,28 @@ const s = StyleSheet.create({
     overflow: 'hidden',
   },
   progressBarFill: { height: '100%', borderRadius: BorderRadius.full },
-  progressHint:    { fontSize: 12, textAlign: 'center' },
+  progressHint: { fontSize: 12, textAlign: 'center' },
 
-  statsRow:  { flexDirection: 'row', gap: 12, height: 160 },
-  statsCol:  { flex: 1, gap: 12 },
+  statsRow: { flexDirection: 'row', gap: 12, minHeight: 160 },
+  statsCol: { flex: 1, gap: 12 },
   statCard: {
     borderRadius: 22,
-    padding: 16,
+    padding: 14,
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowRadius: 8,
+    overflow: 'hidden',
   },
-  statCardDark:   { flex: 1 },
-  statIconLg:     { fontSize: 32, marginBottom: 4 },
-  statIconSm:     { fontSize: 20, marginBottom: 2 },
-  statValueLight: { fontSize: 34, fontWeight: '900', color: '#ffffff' },
-  statValueDark:  { fontSize: 28, fontWeight: '900' },
-  statLabelLight: { fontSize: 11, color: 'rgba(255,255,255,0.7)', textAlign: 'center', lineHeight: 15 },
-  statLabelDark:  { fontSize: 11, textAlign: 'center' },
+  statCardDark: { flex: 1 },
+  statIconLg: { fontSize: 28, marginBottom: 2 },
+  statIconSm: { fontSize: 18, marginBottom: 2 },
+  statValueLight: { fontSize: 28, fontWeight: '900', color: '#ffffff', textAlign: 'center' },
+  statValueDark: { fontSize: 24, fontWeight: '900', textAlign: 'center' },
+  statLabelLight: { fontSize: 10, color: 'rgba(255,255,255,0.7)', textAlign: 'center', lineHeight: 14, flexShrink: 1 },
+  statLabelDark: { fontSize: 10, textAlign: 'center', flexShrink: 1 },
 
   sectionLabel: {
     fontSize: 12,
@@ -480,12 +549,12 @@ const s = StyleSheet.create({
     width: 48, height: 48, borderRadius: 24,
     alignItems: 'center', justifyContent: 'center',
   },
-  levelEmoji:   { fontSize: 24 },
-  levelInfo:    { flex: 1 },
-  levelName:    { fontSize: 15, fontWeight: '700' },
-  levelReq:     { fontSize: 12, marginTop: 2 },
+  levelEmoji: { fontSize: 24 },
+  levelInfo: { flex: 1 },
+  levelName: { fontSize: 15, fontWeight: '700' },
+  levelReq: { fontSize: 12, marginTop: 2 },
   levelCurrent: { fontSize: 11, fontWeight: '700', marginTop: 2 },
-  levelCheck:   { fontSize: 20 },
+  levelCheck: { fontSize: 20 },
 
   messageCard: {
     borderRadius: 18,
@@ -501,7 +570,7 @@ const s = StyleSheet.create({
     shadowRadius: 4,
   },
   messageEmoji: { fontSize: 22 },
-  messageText:  { flex: 1, fontSize: 13, lineHeight: 20, fontStyle: 'italic' },
+  messageText: { flex: 1, fontSize: 13, lineHeight: 20, fontStyle: 'italic' },
 
   modalOverlay: {
     flex: 1,
@@ -522,11 +591,11 @@ const s = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 20,
   },
-  modalEmoji:     { fontSize: 72 },
-  modalTitle:     { fontSize: 24, fontWeight: '900', textAlign: 'center' },
-  modalBadge:     { borderRadius: BorderRadius.full, paddingHorizontal: 18, paddingVertical: 8 },
+  modalEmoji: { fontSize: 72 },
+  modalTitle: { fontSize: 24, fontWeight: '900', textAlign: 'center' },
+  modalBadge: { borderRadius: BorderRadius.full, paddingHorizontal: 18, paddingVertical: 8 },
   modalBadgeText: { fontSize: 15, fontWeight: '800' },
-  modalMessage:   { fontSize: 14, textAlign: 'center', lineHeight: 21 },
+  modalMessage: { fontSize: 14, textAlign: 'center', lineHeight: 21 },
   modalBtn: {
     borderRadius: BorderRadius.full,
     paddingVertical: 14,

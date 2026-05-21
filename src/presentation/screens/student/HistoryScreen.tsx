@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList,
-  ActivityIndicator, TouchableOpacity, Image,
+  ActivityIndicator, TouchableOpacity, Image, Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { OnboardingTooltip } from '../../components/OnboardingTooltip';
+import { useWalkthroughStore } from '../../../infrastructure/stores/walkthroughStore';
+import { WALKTHROUGH_STEPS, useWalkthrough } from '../../hooks/useWalkthrough';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuthStore } from '../../../infrastructure/stores/authStore';
 import {
@@ -37,23 +40,33 @@ const todayIndex = (() => {
 
 export const HistoryScreen = () => {
   const { isDark } = useTheme();
-  const bg            = isDark ? '#0f172a' : '#f5f5f0';
-  const cardBg        = isDark ? '#1e293b' : '#ffffff';
-  const border        = isDark ? '#334155' : '#e2e8f0';
-  const textPrimary   = isDark ? '#f1f5f9' : '#334155';
+  const navigation = useNavigation();
+  const bg = isDark ? '#0f172a' : '#f5f5f0';
+  const cardBg = isDark ? '#1e293b' : '#ffffff';
+  const border = isDark ? '#334155' : '#e2e8f0';
+  const textPrimary = isDark ? '#f1f5f9' : '#334155';
   const textSecondary = isDark ? '#94a3b8' : '#64748b';
-  const textMuted     = isDark ? '#475569' : '#94a3b8';
-  const green         = isDark ? '#22c55e' : '#1a6b0a';
-  const greenDark     = isDark ? '#16a34a' : '#042901';
-  const greenLight    = isDark ? '#4ade80' : '#c1d9b7';
+  const textMuted = isDark ? '#475569' : '#94a3b8';
+  const green = isDark ? '#22c55e' : '#1a6b0a';
+  const greenDark = isDark ? '#16a34a' : '#042901';
+  const greenLight = isDark ? '#4ade80' : '#c1d9b7';
 
-  const navigation = useNavigation<NativeStackNavigationProp<StudentStackParams>>();
+  const stackNav = useNavigation<NativeStackNavigationProp<StudentStackParams>>();
   const user = useAuthStore((s) => s.user);
-  const [history, setHistory]             = useState<Suggestion[]>([]);
-  const [loading, setLoading]             = useState(true);
-  const [filter, setFilter]               = useState<Filter>('todas');
+
+  const summaryCardRef = useRef<View>(null);
+  const filterRowRef = useRef<View>(null);
+  const flatListRef = useRef<FlatList<Suggestion>>(null);
+
+  const { active, stepIndex, measure, setMeasure } = useWalkthroughStore();
+  const { skipWalkthrough, nextStep } = useWalkthrough();
+  const currentStep = WALKTHROUGH_STEPS[stepIndex];
+
+  const [history, setHistory] = useState<Suggestion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<Filter>('todas');
   const [weeklySummary, setWeeklySummary] = useState<WeeklySummary | null>(null);
-  const [topFoods, setTopFoods]           = useState<TopFood[]>([]);
+  const [topFoods, setTopFoods] = useState<TopFood[]>([]);
 
   useEffect(() => {
     if (!user) return;
@@ -62,13 +75,42 @@ export const HistoryScreen = () => {
       .finally(() => setLoading(false));
     getWeeklySummaryUseCase(user.id)
       .then(setWeeklySummary)
-      .catch(() => {});
+      .catch(() => { });
     getTopAcceptedFoodsUseCase(user.id)
       .then(setTopFoods)
-      .catch(() => {});
+      .catch(() => { });
   }, [user]);
 
-  const accepted  = history.filter(s => s.response === 'aceptada').length;
+  useEffect(() => {
+    if (!active || currentStep?.screen !== 'Historial') return;
+    const refs: Record<string, React.RefObject<View | null>> = {
+      summaryCard: summaryCardRef,
+      filterRow: filterRowRef,
+    };
+    const refCurrent = refs[currentStep.refKey]?.current;
+    if (!refCurrent) return;
+    let cancelled = false;
+    const scrollMap: Record<string, number> = {
+      summaryCard: 0,
+      filterRow: 320,
+    };
+    flatListRef.current?.scrollToOffset({
+      offset: scrollMap[currentStep.refKey] ?? 0,
+      animated: true,
+    });
+    const timer = setTimeout(() => {
+      if (cancelled) return;
+      refCurrent.measure((_x, _y, width, height, pageX, pageY) => {
+        if (!cancelled) setMeasure({ pageX, pageY, width, height });
+      });
+    }, 450);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [active, stepIndex]);
+
+  const accepted = history.filter(s => s.response === 'aceptada').length;
   const discarded = history.filter(s => s.response === 'descartada').length;
   const pct = history.length > 0 ? Math.round((accepted / history.length) * 100) : 0;
 
@@ -79,10 +121,10 @@ export const HistoryScreen = () => {
   const weeklyReflection = !weeklySummary || weeklySummary.total === 0
     ? 'Acepta tu primera sugerencia para ver tu resumen semanal'
     : weeklySummary.acceptanceRate >= 70
-    ? '¡Has tenido una semana increíble! Tu cuerpo lo nota 🌿'
-    : weeklySummary.acceptanceRate >= 40
-    ? 'Vas bien. Cada decisión suma, sin importar el tamaño 🌱'
-    : 'Está bien. Mañana es una nueva oportunidad 💚';
+      ? '¡Has tenido una semana increíble! Tu cuerpo lo nota 🌿'
+      : weeklySummary.acceptanceRate >= 40
+        ? 'Vas bien. Cada decisión suma, sin importar el tamaño 🌱'
+        : 'Está bien. Mañana es una nueva oportunidad 💚';
 
   const maxAccepted = weeklySummary
     ? Math.max(...weeklySummary.days.map(d => d.accepted), 1)
@@ -97,13 +139,13 @@ export const HistoryScreen = () => {
   const renderItem = ({ item }: { item: Suggestion }) => (
     <TouchableOpacity
       style={[s.item, { backgroundColor: cardBg, shadowOpacity: isDark ? 0.3 : 0.06 }]}
-      onPress={() => navigation.navigate('DetalleAlimento', { food: item.food, suggestionId: item.id })}
+      onPress={() => stackNav.navigate('DetalleAlimento', { food: item.food, suggestionId: item.id })}
       activeOpacity={0.85}
     >
       <View style={[s.itemAccent, {
         backgroundColor:
-          item.response === 'aceptada'   ? green :
-          item.response === 'descartada' ? (isDark ? '#475569' : '#cbd5e1') : '#fbbf24',
+          item.response === 'aceptada' ? green :
+            item.response === 'descartada' ? (isDark ? '#475569' : '#cbd5e1') : '#fbbf24',
       }]} />
       <View style={s.itemContent}>
         <View style={s.itemTop}>
@@ -112,17 +154,17 @@ export const HistoryScreen = () => {
           </Text>
           <View style={[s.badge, {
             backgroundColor:
-              item.response === 'aceptada'   ? (isDark ? '#052e16' : '#f0fdf4') :
-              item.response === 'descartada' ? (isDark ? '#1e293b' : '#f8fafc') :
-              (isDark ? '#1c1200' : '#fffbeb'),
+              item.response === 'aceptada' ? (isDark ? '#052e16' : '#f0fdf4') :
+                item.response === 'descartada' ? (isDark ? '#1e293b' : '#f8fafc') :
+                  (isDark ? '#1c1200' : '#fffbeb'),
           }]}>
             <Text style={[s.badgeText, {
               color:
-                item.response === 'aceptada'   ? '#22c55e' :
-                item.response === 'descartada' ? textSecondary : '#d97706',
+                item.response === 'aceptada' ? '#22c55e' :
+                  item.response === 'descartada' ? textSecondary : '#d97706',
             }]}>
-              {item.response === 'aceptada'    ? '✓ Aceptada' :
-               item.response === 'descartada' ? '✕ Descartada' : '⏳ Pendiente'}
+              {item.response === 'aceptada' ? '✓ Aceptada' :
+                item.response === 'descartada' ? '✕ Descartada' : '⏳ Pendiente'}
             </Text>
           </View>
         </View>
@@ -141,7 +183,7 @@ export const HistoryScreen = () => {
           {item.feedback && (
             <Text style={s.feedbackTag}>
               {item.feedback === 'me_gusta' ? '👍' :
-               item.feedback === 'no_me_gusta' ? '👎' : '🤷'}
+                item.feedback === 'no_me_gusta' ? '👎' : '🤷'}
             </Text>
           )}
           <Text style={[s.chevron, { color: textMuted }]}>›</Text>
@@ -155,7 +197,7 @@ export const HistoryScreen = () => {
     <View style={s.listHeader}>
 
       {/* Resumen global */}
-      <View style={[s.summaryCard, { backgroundColor: cardBg, shadowOpacity: isDark ? 0.3 : 0.08 }]}>
+      <View ref={summaryCardRef} style={[s.summaryCard, { backgroundColor: cardBg, shadowOpacity: isDark ? 0.3 : 0.08 }]}>
         <View style={s.summaryLeft}>
           <Text style={[s.summaryPct, { color: textPrimary }]}>{pct}%</Text>
           <Text style={[s.summaryPctLabel, { color: textMuted }]}>aceptación total</Text>
@@ -247,7 +289,7 @@ export const HistoryScreen = () => {
       </View>
 
       {/* Filtros */}
-      <View style={s.filtersRow}>
+      <View ref={filterRowRef} style={s.filtersRow}>
         {(['todas', 'aceptada', 'descartada'] as Filter[]).map(f => (
           <TouchableOpacity
             key={f}
@@ -273,7 +315,7 @@ export const HistoryScreen = () => {
 
   // ── Patrones calculados en cliente ──────────────────────────
   const RANK_COLORS = ['#fbbf24', '#94a3b8', '#d97706'];
-  const DAYS_ES     = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const DAYS_ES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
   const computeInsights = () => {
     const accepted = history.filter(s => s.response === 'aceptada');
@@ -283,7 +325,7 @@ export const HistoryScreen = () => {
     const hourBins = { mañana: 0, tarde: 0, noche: 0 };
     for (const s of accepted) {
       const h = new Date(s.suggestedAt).getHours();
-      if (h >= 6 && h < 12)       hourBins.mañana++;
+      if (h >= 6 && h < 12) hourBins.mañana++;
       else if (h >= 12 && h < 18) hourBins.tarde++;
       else if (h >= 18 && h < 24) hourBins.noche++;
     }
@@ -335,7 +377,7 @@ export const HistoryScreen = () => {
             <TouchableOpacity
               key={i}
               style={[s.topFoodRow, { borderTopWidth: i > 0 ? 1 : 0, borderColor: border }]}
-              onPress={() => navigation.navigate('DetalleAlimento', { food: item.food })}
+              onPress={() => stackNav.navigate('DetalleAlimento', { food: item.food })}
               activeOpacity={0.8}
             >
               {/* Posición con círculo de color */}
@@ -405,6 +447,7 @@ export const HistoryScreen = () => {
         </View>
 
         <FlatList
+          ref={flatListRef}
           data={filtered}
           keyExtractor={(i) => i.id}
           renderItem={renderItem}
@@ -423,6 +466,21 @@ export const HistoryScreen = () => {
           }
         />
       </SafeAreaView>
+
+      {active && currentStep?.screen === 'Historial' && measure !== null && (
+        <OnboardingTooltip
+          visible
+          title={currentStep.title}
+          description={currentStep.description}
+          icon={currentStep.icon}
+          position={currentStep.position}
+          targetMeasure={measure}
+          step={stepIndex + 1}
+          totalSteps={WALKTHROUGH_STEPS.length}
+          onNext={() => nextStep(navigation)}
+          onSkip={skipWalkthrough}
+        />
+      )}
     </View>
   );
 };
@@ -439,10 +497,10 @@ const s = StyleSheet.create({
   safe: { flex: 1 },
 
   header: { paddingHorizontal: 18, paddingTop: 8, paddingBottom: 8 },
-  headerSub:   { fontSize: 12, fontWeight: '600' },
+  headerSub: { fontSize: 12, fontWeight: '600' },
   headerTitle: { fontSize: 28, fontWeight: '900', color: '#ffffff' },
 
-  list:       { paddingHorizontal: 18, paddingBottom: 30, gap: 10 },
+  list: { paddingHorizontal: 18, paddingBottom: 30, gap: 10 },
   listHeader: { gap: 12, paddingTop: 4, paddingBottom: 4 },
 
   summaryCard: {
@@ -451,18 +509,18 @@ const s = StyleSheet.create({
     elevation: 6, shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 }, shadowRadius: 12,
   },
-  summaryLeft:      { flex: 1.2, gap: 4 },
-  summaryPct:       { fontSize: 42, fontWeight: '900', lineHeight: 46 },
-  summaryPctLabel:  { fontSize: 12, fontWeight: '600' },
+  summaryLeft: { flex: 1.2, gap: 4 },
+  summaryPct: { fontSize: 42, fontWeight: '900', lineHeight: 46 },
+  summaryPctLabel: { fontSize: 12, fontWeight: '600' },
   summaryBarBg: {
     height: 6, borderRadius: BorderRadius.full,
     overflow: 'hidden', marginTop: 4,
   },
-  summaryBarFill:   { height: '100%', borderRadius: BorderRadius.full },
-  summaryDivider:   { width: 1, height: 70 },
-  summaryRight:     { flex: 1, gap: 8 },
-  summaryStatRow:   { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  summaryDot:       { fontSize: 10 },
+  summaryBarFill: { height: '100%', borderRadius: BorderRadius.full },
+  summaryDivider: { width: 1, height: 70 },
+  summaryRight: { flex: 1, gap: 8 },
+  summaryStatRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  summaryDot: { fontSize: 10 },
   summaryStatLabel: { flex: 1, fontSize: 12 },
   summaryStatValue: { fontSize: 16, fontWeight: '900' },
 
@@ -476,9 +534,9 @@ const s = StyleSheet.create({
     elevation: 4, shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 }, shadowRadius: 8,
   },
-  weeklyMetrics:       { flexDirection: 'row', alignItems: 'center' },
-  weeklyMetricBlock:   { flex: 1, alignItems: 'center', gap: 3 },
-  weeklyMetricValue:   { fontSize: 24, fontWeight: '900' },
+  weeklyMetrics: { flexDirection: 'row', alignItems: 'center' },
+  weeklyMetricBlock: { flex: 1, alignItems: 'center', gap: 3 },
+  weeklyMetricValue: { fontSize: 24, fontWeight: '900' },
   weeklyMetricLabel: {
     fontSize: 10, fontWeight: '700',
     textTransform: 'uppercase', letterSpacing: 0.3,
@@ -490,10 +548,10 @@ const s = StyleSheet.create({
     alignItems: 'flex-end',
     justifyContent: 'space-between',
   },
-  barColumn:  { flex: 1, alignItems: 'center', gap: 6 },
+  barColumn: { flex: 1, alignItems: 'center', gap: 6 },
   barWrapper: { height: 80, justifyContent: 'flex-end', width: '100%', alignItems: 'center' },
-  bar:        { width: '72%', borderTopLeftRadius: 5, borderTopRightRadius: 5 },
-  barLabel:   { fontSize: 11 },
+  bar: { width: '72%', borderTopLeftRadius: 5, borderTopRightRadius: 5 },
+  barLabel: { fontSize: 11 },
 
   reflectionCard: {
     borderRadius: 14, padding: 14, borderLeftWidth: 3,
@@ -502,7 +560,7 @@ const s = StyleSheet.create({
   },
   reflectionText: { fontSize: 13, lineHeight: 20 },
 
-  filtersRow:  { flexDirection: 'row', gap: 8 },
+  filtersRow: { flexDirection: 'row', gap: 8 },
   filterBtn: {
     flex: 1, borderRadius: BorderRadius.full,
     paddingVertical: 9, alignItems: 'center',
@@ -515,26 +573,26 @@ const s = StyleSheet.create({
     overflow: 'hidden', elevation: 3, shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 }, shadowRadius: 6,
   },
-  itemAccent:  { width: 5 },
+  itemAccent: { width: 5 },
   itemContent: { flex: 1, padding: 14, gap: 6 },
   itemTop: {
     flexDirection: 'row', justifyContent: 'space-between',
     alignItems: 'center', gap: 8,
   },
-  itemName:    { fontSize: 15, fontWeight: '800', flex: 1 },
-  badge:       { borderRadius: BorderRadius.full, paddingHorizontal: 10, paddingVertical: 4 },
-  badgeText:   { fontSize: 11, fontWeight: '700' },
-  itemBottom:  { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
-  itemDate:    { fontSize: 12 },
-  itemMeta:    { fontSize: 11 },
-  examTag:     { fontSize: 11, color: '#d97706', fontWeight: '600' },
+  itemName: { fontSize: 15, fontWeight: '800', flex: 1 },
+  badge: { borderRadius: BorderRadius.full, paddingHorizontal: 10, paddingVertical: 4 },
+  badgeText: { fontSize: 11, fontWeight: '700' },
+  itemBottom: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
+  itemDate: { fontSize: 12 },
+  itemMeta: { fontSize: 11 },
+  examTag: { fontSize: 11, color: '#d97706', fontWeight: '600' },
   feedbackTag: { fontSize: 14 },
-  chevron:     { fontSize: 18, fontWeight: '700', marginLeft: 'auto' },
+  chevron: { fontSize: 18, fontWeight: '700', marginLeft: 'auto' },
 
   emptyState: { alignItems: 'center', paddingTop: 60, gap: 10 },
   emptyEmoji: { fontSize: 48 },
   emptyTitle: { fontSize: 18, fontWeight: '800' },
-  emptySub:   { fontSize: 13, textAlign: 'center' },
+  emptySub: { fontSize: 13, textAlign: 'center' },
 
   footerWrap: { gap: 14, marginTop: 6 },
 
@@ -544,7 +602,7 @@ const s = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 }, shadowRadius: 8,
   },
   topFoodsIntro: { fontSize: 12, marginBottom: 12 },
-  topFoodsList:  { gap: 0 },
+  topFoodsList: { gap: 0 },
   topFoodRow: {
     flexDirection: 'row', alignItems: 'center',
     gap: 10, paddingVertical: 10,
@@ -559,11 +617,11 @@ const s = StyleSheet.create({
     width: 40, height: 40, borderRadius: 20,
     alignItems: 'center', justifyContent: 'center',
   },
-  topFoodLetter:    { fontSize: 18, fontWeight: '900' },
-  topFoodName:      { flex: 1, fontSize: 14, fontWeight: '700' },
+  topFoodLetter: { fontSize: 18, fontWeight: '900' },
+  topFoodName: { flex: 1, fontSize: 14, fontWeight: '700' },
   topFoodCountPill: { borderRadius: BorderRadius.full, paddingHorizontal: 10, paddingVertical: 4 },
   topFoodCountText: { fontSize: 11, fontWeight: '700' },
-  topFoodChevron:   { fontSize: 18, fontWeight: '700' },
+  topFoodChevron: { fontSize: 18, fontWeight: '700' },
 
   patternsSection: { gap: 8 },
   insightCard: {
@@ -572,6 +630,6 @@ const s = StyleSheet.create({
     elevation: 2, shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4,
   },
-  insightText:     { fontSize: 13, lineHeight: 20 },
-  patternsFootnote:{ fontSize: 11, textAlign: 'center', marginTop: 4 },
+  insightText: { fontSize: 13, lineHeight: 20 },
+  patternsFootnote: { fontSize: 11, textAlign: 'center', marginTop: 4 },
 });

@@ -3,10 +3,11 @@ import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator, Alert, Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore }        from '../../../infrastructure/stores/authStore';
 import { useHealthStore }      from '../../../infrastructure/stores/healthStore';
 import { useNotificationStore } from '../../../infrastructure/stores/notificationStore';
-import { logoutUseCase }       from '../../../domain/usecases/auth';
+import { logoutUseCase, resetOnboardingUseCase } from '../../../domain/usecases/auth';
 import {
   getValidatedFoodsCountUseCase,
   getActiveFoodsCountUseCase,
@@ -58,6 +59,17 @@ export const NutritionistProfileScreen = () => {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [user]);
+
+  const handleRestartTour = async () => {
+    if (!user) return;
+    try {
+      await AsyncStorage.removeItem('home_walkthrough_done');
+      await resetOnboardingUseCase(user.id);
+      useAuthStore.getState().setUser({ ...user, onboardingCompleted: false });
+    } catch {
+      Alert.alert('Error', 'No se pudo reiniciar el recorrido.');
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert('Cerrar sesión', '¿Estás seguro?', [
@@ -259,6 +271,19 @@ export const NutritionistProfileScreen = () => {
                   />
                 </View>
               )}
+
+              <TouchableOpacity
+                style={[s.tourBtn, { backgroundColor: cardBg, borderColor: border }]}
+                onPress={handleRestartTour}
+                activeOpacity={0.85}
+              >
+                <Text style={s.tourBtnIcon}>🗺️</Text>
+                <View style={s.tourBtnText}>
+                  <Text style={[s.tourBtnTitle, { color: textPrimary }]}>Ver recorrido</Text>
+                  <Text style={[s.tourBtnSub, { color: textMuted }]}>Repasa las funciones de la app</Text>
+                </View>
+                <Text style={[s.tourBtnArrow, { color: textMuted }]}>›</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -340,6 +365,21 @@ const s = StyleSheet.create({
     paddingVertical: 14, alignItems: 'center', marginTop: 4,
   },
   logoutText: { color: '#ef4444', fontSize: 15, fontWeight: '800' },
+
+  tourBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1.5,
+    marginTop: 4,
+  },
+  tourBtnIcon:  { fontSize: 22 },
+  tourBtnText:  { flex: 1 },
+  tourBtnTitle: { fontSize: 14, fontWeight: '700' },
+  tourBtnSub:   { fontSize: 12, marginTop: 1 },
+  tourBtnArrow: { fontSize: 20, fontWeight: '700' },
 
   toggleRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },
   toggleInfo:   { flex: 1, paddingRight: 12 },

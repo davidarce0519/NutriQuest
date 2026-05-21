@@ -9,6 +9,7 @@ import { AuthNavigator }              from './AuthNavigator';
 import { StudentNavigator }           from './StudentNavigator';
 import { NutritionistNavigator }      from './NutritionistNavigator';
 import { AdminNavigator }             from './AdminNavigator';
+import { OnboardingScreen }           from '../screens/onboarding/OnboardingScreen';
 import {
   getNotificationSettingsUseCase,
   initializeNotificationsUseCase,
@@ -67,6 +68,8 @@ const AppStack = ({ navigationRef }: { navigationRef: React.RefObject<NavRef | n
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!user ? (
         <Stack.Screen name="Auth"         component={AuthNavigator} />
+      ) : !user.onboardingCompleted ? (
+        <Stack.Screen name="Onboarding"   component={OnboardingScreen} />
       ) : user.role === 'estudiante' ? (
         <Stack.Screen name="Student"      component={StudentNavigator} />
       ) : user.role === 'nutricionista' ? (

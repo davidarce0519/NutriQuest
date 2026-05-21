@@ -30,11 +30,17 @@ export const LoginScreen = () => {
   const handleLogin = async () => {
     try {
       setLoading(true);
-      const { user } = await loginUseCase(email, password);
-      if (user) {
-        const profile = await authRepository.getProfile(user.id);
-        setUser(profile);
-      }
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('La conexión tardó demasiado. Intenta de nuevo.')), 10000)
+      );
+      const loginPromise = async () => {
+        const { user } = await loginUseCase(email, password);
+        if (user) {
+          const profile = await authRepository.getProfile(user.id);
+          setUser(profile);
+        }
+      };
+      await Promise.race([loginPromise(), timeoutPromise]);
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'No se pudo iniciar sesión');
     } finally {

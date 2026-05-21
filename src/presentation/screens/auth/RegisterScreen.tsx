@@ -45,12 +45,18 @@ export const RegisterScreen = () => {
     if (!consent) { Alert.alert('Requerido', 'Debes aceptar el tratamiento de datos.'); return; }
     try {
       setLoading(true);
-      const { user } = await registerUseCase(email, password, fullName, selectedRole);
-      if (user) {
-        await acceptDataConsentUseCase(user.id);
-        const profile = await authRepository.getProfile(user.id);
-        setUser(profile);
-      }
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('La conexión tardó demasiado. Intenta de nuevo.')), 10000)
+      );
+      const registerPromise = async () => {
+        const { user } = await registerUseCase(email, password, fullName, selectedRole);
+        if (user) {
+          await acceptDataConsentUseCase(user.id);
+          const profile = await authRepository.getProfile(user.id);
+          setUser(profile);
+        }
+      };
+      await Promise.race([registerPromise(), timeoutPromise]);
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'No se pudo crear la cuenta');
     } finally {
@@ -142,7 +148,7 @@ export const RegisterScreen = () => {
                     <Text style={s.fieldLabel}>¿Cómo usarás NutriQuest?</Text>
                     <View style={s.roleCards}>
                       {([
-                        { role: 'estudiante'    as const, emoji: '🎓', label: 'Estudiante',    desc: 'Recibe sugerencias alimentarias personalizadas' },
+                        { role: 'estudiante' as const, emoji: '🎓', label: 'Estudiante', desc: 'Recibe sugerencias alimentarias personalizadas' },
                         { role: 'nutricionista' as const, emoji: '🥼', label: 'Nutricionista', desc: 'Gestiona el catálogo de alimentos' },
                       ]).map(({ role, emoji, label, desc }) => (
                         <TouchableOpacity
@@ -507,23 +513,23 @@ const s = StyleSheet.create({
   // Selector de rol
   roleCards: { gap: 8 },
   roleCard: {
-    flexDirection:   'row',
-    alignItems:      'center',
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius:    14,
-    padding:         14,
-    gap:             10,
-    borderWidth:     1.5,
-    borderColor:     'rgba(255,255,255,0.15)',
+    borderRadius: 14,
+    padding: 14,
+    gap: 10,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.15)',
   },
   roleCardSelected: {
     backgroundColor: 'rgba(255,255,255,0.2)',
-    borderColor:     'rgba(255,255,255,0.75)',
+    borderColor: 'rgba(255,255,255,0.75)',
   },
   roleCardEmoji: { fontSize: 22 },
-  roleCardText:  { flex: 1 },
+  roleCardText: { flex: 1 },
   roleCardLabel: { fontSize: 14, fontWeight: '800', color: WHITE },
-  roleCardDesc:  { fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2, lineHeight: 16 },
+  roleCardDesc: { fontSize: 11, color: 'rgba(255,255,255,0.6)', marginTop: 2, lineHeight: 16 },
   radioOuter: {
     width: 18, height: 18, borderRadius: 9,
     borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)',

@@ -63,3 +63,11 @@ export const toggleUserActiveUseCase = async (userId: string, isActive: boolean)
 export const getActiveUsersCountUseCase = async (): Promise<number> => {
   return authRepository.getActiveUsersCount();
 };
+
+export const completeOnboardingUseCase = async (userId: string): Promise<void> => {
+  await authRepository.completeOnboarding(userId);
+};
+
+export const resetOnboardingUseCase = async (userId: string): Promise<void> => {
+  await authRepository.resetOnboarding(userId);
+};

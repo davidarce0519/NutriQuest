@@ -1,19 +1,29 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  TextInput, Alert, ActivityIndicator, Modal, Switch,
+  TextInput, Alert, ActivityIndicator, Modal, Switch, Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '../../../infrastructure/stores/authStore';
 import { useHealthStore } from '../../../infrastructure/stores/healthStore';
 import { useTheme } from '../../../infrastructure/theme/ThemeContext';
 import { logoutUseCase, deleteUserDataUseCase, deleteAccountUseCase } from '../../../domain/usecases/auth';
+import { OnboardingTooltip } from '../../components/OnboardingTooltip';
+import { useWalkthroughStore } from '../../../infrastructure/stores/walkthroughStore';
+import { WALKTHROUGH_STEPS, useWalkthrough } from '../../hooks/useWalkthrough';
+import { StudentTabParams } from '../../navigation/StudentNavigator';
 import {
   saveHealthProfileUseCase,
   calculateBmiUseCase,
   getHealthProfileUseCase,
   addMeasurementUseCase,
 } from '../../../domain/usecases/health';
+import { getProgressUseCase } from '../../../domain/usecases/avatar';
+import { AvatarProgress } from '../../../domain/models';
+import { StudentAvatar } from '../../components/StudentAvatar';
 import { supabase } from '../../../data/supabase/supabaseClient';
 import { BorderRadius } from '../../../infrastructure/theme';
 import { cancelAllNotifications } from '../../../infrastructure/notifications/notificationService';
@@ -65,6 +75,7 @@ const PREF_CATEGORIES = [
 type FoodPref = { id: string; category: string; value: string; severity?: string };
 
 export const ProfileScreen = () => {
+  const navigation = useNavigation<BottomTabNavigationProp<StudentTabParams>>();
   const { user, clear: clearAuth } = useAuthStore();
   const { profile, setProfile, clear: clearHealth } = useHealthStore();
   const { isDark } = useTheme();
@@ -85,6 +96,16 @@ export const ProfileScreen = () => {
   const green = isDark ? '#22c55e' : '#1a6b0a';
   const greenDark = isDark ? '#16a34a' : '#042901';
   const greenLight = isDark ? '#4ade80' : '#c1d9b7';
+
+  const biometricsCardRef = useRef<View>(null);
+  const configCardRef = useRef<View>(null);
+  const scrollRef = useRef<ScrollView>(null);
+
+  const { active, stepIndex, measure, setMeasure } = useWalkthroughStore();
+  const { startWalkthrough, skipWalkthrough, nextStep } = useWalkthrough();
+  const currentStep = WALKTHROUGH_STEPS[stepIndex];
+
+  const [progress, setProgress] = useState<AvatarProgress | null>(null);
 
   // ── Estado biométricos ──
   const [weightKg, setWeightKg] = useState('');
@@ -122,6 +143,7 @@ export const ProfileScreen = () => {
 
   useEffect(() => {
     if (!user) return;
+    getProgressUseCase(user.id).then(setProgress).catch(() => { });
     if (profile) { fillForm(profile); } else {
       setLoading(true);
       getHealthProfileUseCase(user.id)
@@ -345,7 +367,7 @@ export const ProfileScreen = () => {
     if (!user) return;
     try {
       setDeleting(true);
-      await cancelAllNotifications().catch(() => {});
+      await cancelAllNotifications().catch(() => { });
       await deleteUserDataUseCase(user.id);
       clearHealth();
       clearNotif();
@@ -403,7 +425,7 @@ export const ProfileScreen = () => {
     if (!user) return;
     try {
       setDeleting(true);
-      await cancelAllNotifications().catch(() => {});
+      await cancelAllNotifications().catch(() => { });
       await deleteAccountUseCase();
       clearAuth();
       clearHealth();
@@ -412,6 +434,45 @@ export const ProfileScreen = () => {
       Alert.alert('Error', 'No se pudo eliminar la cuenta. Intenta de nuevo.');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!active || currentStep?.screen !== 'Perfil') return;
+    const refs: Record<string, React.RefObject<View | null>> = {
+      biometricsCard: biometricsCardRef,
+      configCard: configCardRef,
+    };
+    const refCurrent = refs[currentStep.refKey]?.current;
+    if (!refCurrent) return;
+    let cancelled = false;
+    const scrollMap: Record<string, number> = {
+      biometricsCard: 300,
+      configCard: 1200,
+    };
+    scrollRef.current?.scrollTo({
+      y: scrollMap[currentStep.refKey] ?? 0,
+      animated: true,
+    });
+    const timer = setTimeout(() => {
+      if (cancelled) return;
+      refCurrent.measure((_x, _y, width, height, pageX, pageY) => {
+        if (!cancelled) setMeasure({ pageX, pageY, width, height });
+      });
+    }, 450);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [active, stepIndex]);
+
+  const handleRestartTour = async () => {
+    try {
+      await AsyncStorage.removeItem('home_walkthrough_done');
+      startWalkthrough();
+      navigation.navigate('Inicio');
+    } catch {
+      Alert.alert('Error', 'No se pudo reiniciar el recorrido.');
     }
   };
 
@@ -444,6 +505,7 @@ export const ProfileScreen = () => {
 
       <SafeAreaView style={s.safe}>
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={s.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -455,9 +517,15 @@ export const ProfileScreen = () => {
               <Text style={[s.headerSub, { color: greenLight }]}>Mi perfil de salud</Text>
               <Text style={s.headerTitle}>{user?.fullName?.split(' ')[0] ?? 'Estudiante'}</Text>
             </View>
-            <View style={s.avatarCircleLg}>
-              <Text style={s.avatarLetterLg}>{user?.fullName?.[0]?.toUpperCase() ?? 'E'}</Text>
-            </View>
+            <StudentAvatar
+              bmiCategory={profile?.bmiCategory}
+              currentLevel={progress?.currentLevel}
+              streakDays={progress?.activeStreakDays}
+              nutritionalGoal={profile?.nutritionalGoal}
+              activityLevel={profile?.physicalActivityLevel}
+              size={75}
+              animated={true}
+            />
           </View>
 
           {/* INFO CARD */}
@@ -500,7 +568,7 @@ export const ProfileScreen = () => {
           {/* BIOMÉTRICOS */}
           <View style={s.section}>
             <Text style={[s.sectionTitle, { color: textMuted }]}>📏 Datos biométricos</Text>
-            <View style={[s.sectionCard, { backgroundColor: cardBg }]}>
+            <View ref={biometricsCardRef} style={[s.sectionCard, { backgroundColor: cardBg }]}>
               <View style={s.row}>
                 <View style={s.halfField}>
                   <Text style={[s.fieldLabel, { color: textMuted }]}>Peso (kg)</Text>
@@ -686,7 +754,7 @@ export const ProfileScreen = () => {
           {notifSettings && (
             <View style={s.section}>
               <Text style={[s.sectionTitle, { color: textMuted }]}>⚙️ Configuración</Text>
-              <View style={[s.sectionCard, { backgroundColor: cardBg }]}>
+              <View ref={configCardRef} style={[s.sectionCard, { backgroundColor: cardBg }]}>
 
                 <View style={s.toggleRow}>
                   <View style={s.toggleInfo}>
@@ -799,6 +867,19 @@ export const ProfileScreen = () => {
                   </>
                 )}
 
+                <TouchableOpacity
+                  style={[s.tourBtn, { backgroundColor: cardBg, borderColor: border }]}
+                  onPress={handleRestartTour}
+                  activeOpacity={0.85}
+                >
+                  <Text style={s.tourBtnIcon}>🗺️</Text>
+                  <View style={s.tourBtnText}>
+                    <Text style={[s.tourBtnTitle, { color: textPrimary }]}>Ver recorrido</Text>
+                    <Text style={[s.tourBtnSub, { color: textMuted }]}>Repasa las funciones de la app</Text>
+                  </View>
+                  <Text style={[s.tourBtnArrow, { color: textMuted }]}>›</Text>
+                </TouchableOpacity>
+
               </View>
             </View>
           )}
@@ -851,6 +932,21 @@ export const ProfileScreen = () => {
 
         </ScrollView>
       </SafeAreaView>
+
+      {active && currentStep?.screen === 'Perfil' && measure !== null && (
+        <OnboardingTooltip
+          visible
+          title={currentStep.title}
+          description={currentStep.description}
+          icon={currentStep.icon}
+          position={currentStep.position}
+          targetMeasure={measure}
+          step={stepIndex + 1}
+          totalSteps={WALKTHROUGH_STEPS.length}
+          onNext={() => nextStep(navigation)}
+          onSkip={skipWalkthrough}
+        />
+      )}
 
       {/* MODAL */}
       <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
@@ -917,8 +1013,6 @@ const s = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10, paddingBottom: 6 },
   headerSub: { fontSize: 12, fontWeight: '600', letterSpacing: 0.5 },
   headerTitle: { fontSize: 28, fontWeight: '900', color: '#ffffff' },
-  avatarCircleLg: { width: 56, height: 56, borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.4)', alignItems: 'center', justifyContent: 'center' },
-  avatarLetterLg: { fontSize: 24, fontWeight: '900', color: '#ffffff' },
 
   infoCard: { borderRadius: 20, padding: 16, elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12 },
   infoRow: { flexDirection: 'row', alignItems: 'center' },
@@ -1000,6 +1094,21 @@ const s = StyleSheet.create({
   pausedBannerText: { fontSize: 13, fontWeight: '700' },
   resumeBtn: { borderRadius: BorderRadius.full, paddingHorizontal: 14, paddingVertical: 8, alignSelf: 'flex-start' },
   resumeBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '700' },
+
+  tourBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1.5,
+    marginTop: 4,
+  },
+  tourBtnIcon: { fontSize: 22 },
+  tourBtnText: { flex: 1 },
+  tourBtnTitle: { fontSize: 14, fontWeight: '700' },
+  tourBtnSub: { fontSize: 12, marginTop: 1 },
+  tourBtnArrow: { fontSize: 20, fontWeight: '700' },
 
   hourRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 },
   hourControls: { flexDirection: 'row', alignItems: 'center', gap: 10 },

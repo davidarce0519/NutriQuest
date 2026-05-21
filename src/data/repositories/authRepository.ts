@@ -12,23 +12,20 @@ const mapProfile = (data: any): User => ({
   dataConsent: data.data_consent,
   dataConsentAt: data.data_consent_at,
   isActive: data.is_active,
+  onboardingCompleted: data.onboarding_completed ?? false,
   createdAt: data.created_at,
 });
 
-// Esperar a que el trigger cree el perfil — reintenta hasta 5 veces
-// El primer intento es inmediato; entre reintentos se espera 400ms
-const getProfileWithRetry = async (userId: string, attempts = 5): Promise<User> => {
+const getProfileWithRetry = async (userId: string, attempts = 3): Promise<User> => {
   for (let i = 0; i < attempts; i++) {
     const { data } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
-
     if (data) return mapProfile(data);
-
     if (i < attempts - 1) {
-      await new Promise(res => setTimeout(res, 400));
+      await new Promise(res => setTimeout(res, 600));
     }
   }
   throw new Error('No se pudo obtener el perfil. Intenta iniciar sesión de nuevo.');
@@ -155,6 +152,22 @@ export const authRepository = {
       .eq('is_active', true);
     if (error) throw error;
     return count ?? 0;
+  },
+
+  async completeOnboarding(userId: string): Promise<void> {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ onboarding_completed: true })
+      .eq('id', userId);
+    if (error) throw error;
+  },
+
+  async resetOnboarding(userId: string): Promise<void> {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ onboarding_completed: false })
+      .eq('id', userId);
+    if (error) throw error;
   },
 
   onAuthStateChange(callback: (event: string, session: any) => void) {

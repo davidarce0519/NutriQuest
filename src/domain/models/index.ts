@@ -2,16 +2,17 @@
 export type UserRole = 'estudiante' | 'nutricionista' | 'superadmin';
 
 export interface User {
-  id:                   string;
-  fullName:             string;
-  email:                string;
-  role:                 UserRole;
-  avatarUrl?:           string;
-  notificationsPaused:  boolean;
-  dataConsent:          boolean;
-  dataConsentAt?:       string;
-  isActive:             boolean;
-  createdAt:            string;
+  id:                    string;
+  fullName:              string;
+  email:                 string;
+  role:                  UserRole;
+  avatarUrl?:            string;
+  notificationsPaused:   boolean;
+  dataConsent:           boolean;
+  dataConsentAt?:        string;
+  isActive:              boolean;
+  onboardingCompleted:   boolean;
+  createdAt:             string;
 }
 
 // ─── Health Profile ───────────────────────────────────────────
