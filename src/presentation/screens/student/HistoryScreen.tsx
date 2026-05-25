@@ -32,7 +32,6 @@ type WeeklySummary = {
 
 type TopFood = { food: Food; count: number };
 
-// Índice del día actual en la semana (0=Lun, 6=Dom)
 const todayIndex = (() => {
   const d = new Date().getDay();
   return d === 0 ? 6 : d - 1;
